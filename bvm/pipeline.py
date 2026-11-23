@@ -43,6 +43,42 @@ def default_analyzers() -> list:
     return [TechnicalSeo(), GooglePresence(), AiGap()]
 
 
+def _analyze(cfg: ClientConfig, store: Store, run_id: int, facts: list[Fact],
+             analyzers: list) -> list[Finding]:
+    findings: list[Finding] = []
+    for analyzer in analyzers:
+        try:
+            findings.extend(analyzer.analyze(cfg, facts))
+        except Exception as exc:
+            store.save_failure(run_id, analyzer.name, f"{type(exc).__name__}: {exc}")
+    findings.sort(key=lambda f: (-f.score, -f.impact, f.key))
+    return findings
+
+
+def rescore(store: Store) -> int:
+    """Brings checks made under an older formula up to date, and says how many.
+
+    Nothing is fetched again: the pages a check read are kept in the notebook, so its
+    findings are worked out anew from them and the score follows. After this an old check
+    can be compared with a new one. A check whose saved details cannot be read is left as
+    it is.
+    """
+    done = 0
+    for run_id in store.unscored(SCORING):
+        run = store.get_run(run_id)
+        try:
+            cfg = ClientConfig.from_dict(run["config"])
+        except TypeError:
+            continue
+        facts = store.load_facts(run_id)
+        findings = _analyze(cfg, store, run_id, facts, default_analyzers())
+        store.replace_findings(run_id, cfg.slug, findings)
+        store.set_score(run_id, final_score(cfg, facts, findings, store.load_failures(run_id)),
+                        SCORING)
+        done += 1
+    return done
+
+
 def run(cfg: ClientConfig, store: Store, collectors=None, analyzers=None,
         run_id: int | None = None) -> RunResult:
     collectors = default_collectors(cfg) if collectors is None else collectors
@@ -57,14 +93,7 @@ def run(cfg: ClientConfig, store: Store, collectors=None, analyzers=None,
             store.save_failure(run_id, collector.name, f"{type(exc).__name__}: {exc}")
 
     facts = store.load_facts(run_id)
-    findings: list[Finding] = []
-    for analyzer in analyzers:
-        try:
-            findings.extend(analyzer.analyze(cfg, facts))
-        except Exception as exc:
-            store.save_failure(run_id, analyzer.name, f"{type(exc).__name__}: {exc}")
-
-    findings.sort(key=lambda f: (-f.score, -f.impact, f.key))
+    findings = _analyze(cfg, store, run_id, facts, analyzers)
     store.save_findings(run_id, cfg.slug, findings)
     failures = store.load_failures(run_id)
     store.finish_run(run_id, score=final_score(cfg, facts, findings, failures), scoring=SCORING)

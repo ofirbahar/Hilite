@@ -3,6 +3,7 @@ from __future__ import annotations
 import click
 
 from .config import ConfigError, load_config
+from .pipeline import rescore as rescore_checks
 from .pipeline import run as run_pipeline
 from .report import write_report
 from .store import Store
@@ -51,6 +52,41 @@ def delete(run_id: int, db: str) -> None:
     if not removed:
         raise click.ClickException(f"There is no check number {run_id}.")
     click.echo(f"Check {run_id} was deleted.")
+
+
+@main.command()
+@click.argument("run_id", type=int)
+@click.option("--db", default="bvm.sqlite3", show_default=True, help="Notebook database file.")
+def link(run_id: int, db: str) -> None:
+    """Print the personal link of a check: the one address that can delete it.
+
+    A check made before personal links existed gets one now. Add the site's own address
+    in front (https://your-site/...) before sending it to the owner.
+    """
+    store = Store(db)
+    try:
+        key = store.ensure_key(run_id)
+    finally:
+        store.close()
+    if key is None:
+        raise click.ClickException(f"There is no check number {run_id}.")
+    click.echo(f"Personal link of check {run_id}: /runs/{run_id}?key={key}")
+
+
+@main.command()
+@click.option("--db", default="bvm.sqlite3", show_default=True, help="Notebook database file.")
+def rescore(db: str) -> None:
+    """Score older checks by the current formula, from what they already collected.
+
+    Nothing is fetched again. Run it once after an upgrade that changed the formula, so a
+    new check can be compared with the ones before it.
+    """
+    store = Store(db)
+    try:
+        done = rescore_checks(store)
+    finally:
+        store.close()
+    click.echo(f"Rescored {done} checks.")
 
 
 @main.command()

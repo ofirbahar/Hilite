@@ -108,17 +108,18 @@ def pages(count: int, **bad) -> list[Fact]:
 def test_a_finding_knows_how_much_of_the_site_it_touches():
     one = found(*pages(20, description=""))["missing-description"]
     assert (one.affected, one.of) == (1, 20)
-    every = found(*[page(f"/p{n}", description="") for n in range(20)])["missing-description"]
-    assert (every.affected, every.of) == (20, 20)
+    most = found(page("/"), *[page(f"/p{n}", description="") for n in range(19)])
+    assert (most["missing-description"].affected, most["missing-description"].of) == (19, 20)
     assert found(page("/"), has_sitemap=False)["sitemap"].of == 0      # the whole site
 
 
 def test_points_grow_with_the_share_of_pages_and_stop_at_half():
     def lost(bad_pages: int, total: int = 20) -> int:
-        some = [page(f"/p{n}", title="" if n < bad_pages else f"T{n}") for n in range(total)]
+        some = [page(f"/p{n}", title="" if n >= total - bad_pages else f"T{n}")
+                for n in range(total)]                                 # the first page is home
         return dict((key, points) for key, _, points in
                     breakdown(list(found(*some).values())))["missing-title"]
-    assert lost(1) == 4 and lost(5) == 6 and lost(10) == 9 == lost(20)
+    assert lost(1) == 4 and lost(5) == 6 and lost(10) == 9 == lost(19)
     assert lost(1) < lost(5) < lost(10)
     assert lost(1, total=1) == 9                                       # the only page is all of it
 
@@ -262,7 +263,7 @@ def test_only_the_owner_link_can_delete(app_client, tmp_path):
     assert "למחוק לצמיתות" not in shared and key not in shared          # the plain link only reads
     mine = app_client.get(owner).get_data(as_text=True)
     assert "למחוק לצמיתות" in mine and "אי אפשר לשחזר" in mine
-    assert "<bdi>http://localhost/runs/1</bdi>" in mine                  # the address to pass on
+    assert '<bdi data-share="/runs/1">http://localhost/runs/1</bdi>' in mine                  # the address to pass on
 
     assert app_client.post("/runs/1/delete").status_code == 403
     assert app_client.post("/runs/1/delete?key=wrong").status_code == 403
@@ -326,3 +327,166 @@ def test_without_an_address_the_page_does_not_invent_one(tmp_path, monkeypatch):
     monkeypatch.setenv("HILITE_CONTACT", "team@hilite.test")
     client = create_app(str(tmp_path / "w.sqlite3")).test_client()
     assert "team@hilite.test" in client.get("/privacy").get_data(as_text=True)
+
+
+# --- what a second, independent review of the above found -----------------------------
+
+def test_a_problem_on_the_home_page_costs_the_full_points():
+    rest = [page(f"/p{n}") for n in range(29)]
+    home_bad = found(page("/", title="", description=""), *rest)
+    assert dict((key, lost) for key, _, lost in breakdown(list(home_bad.values()))) == {
+        "missing-title": 9, "missing-description": 5}
+    inner_bad = found(page("/"), page("/p0", title="", description=""), *rest[1:])
+    assert dict((key, lost) for key, _, lost in breakdown(list(inner_bad.values()))) == {
+        "missing-title": 4, "missing-description": 2}
+
+
+def test_two_pages_on_a_platform_that_differ_only_after_the_question_mark_are_two_pages(cfg):
+    cfg.name, cfg.site, cfg.start_path, cfg.platform = (
+        "פיצה רומא", "https://facebook.com", "/profile.php?id=1000123", "פייסבוק")
+    other = place("Roma Hair", "x", "https://www.facebook.com/profile.php?id=999")
+    assert best_match(cfg, [other]) == (None, "")
+    mine = place("Roma", "x", "https://facebook.com/profile.php?id=1000123")
+    assert best_match(cfg, [other, mine]) == (mine, "site")
+
+
+def test_two_sites_on_one_shared_host_are_two_sites(cfg):
+    cfg.name, cfg.site, cfg.start_path = "Pizza Roma", "https://sites.google.com", "/view/pizza-roma"
+    assert best_match(cfg, [place("Hair", "x", "https://sites.google.com/view/roma-hair")]) == (None, "")
+    mine = place("Hair", "x", "https://sites.google.com/view/pizza-roma/menu")
+    assert best_match(cfg, [mine]) == (mine, "site")
+    cfg.site, cfg.start_path = "https://www.ikea.test", "/il/he"       # a language folder
+    for website in ("https://ikea.test", "https://www.ikea.test/il/he/", "http://ikea.test/il/he/stores"):
+        assert best_match(cfg, [place("x", "y", website)])[1] == "site", website
+
+
+def test_a_name_that_only_contains_the_other_needs_the_right_city(cfg):
+    cfg.name, cfg.site, cfg.city = "Roma", "https://roma.test", "חיפה"
+    salon = place("Roma Hair Salon", "דיזנגוף 5, תל אביב")
+    assert best_match(cfg, [salon]) == (None, "")                      # a namesake elsewhere
+    assert best_match(cfg, [place("Roma Hair Salon", "הנמל 3, חיפה")])[1] == "name"
+    assert best_match(cfg, [place("Roma", "דיזנגוף 5, תל אביב")])[1] == "name"   # the very name
+    cfg.city = ""
+    assert best_match(cfg, [salon])[1] == "name"                       # no city to go by
+
+
+def test_names_are_found_in_answers_written_the_way_assistants_write():
+    names = {"own": ["Pizza Roma", "פיצה רומא"], "Roma": ["Roma"], "Napoli": ["Napoli", "נאפולי"]}
+    answer = ("Here are a few options:\n\n1. **Pizza Roma** – known for thin crust.\n"
+              "2. *Napoli's* (napoli.co.il) has a wood oven.\n3. \"Roma\" is a newer place.")
+    found_in = mentions(answer, names)
+    assert set(found_in) == {"own", "Napoli", "Roma"}
+    assert answer[found_in["own"]:].startswith("Pizza Roma")
+    assert answer[found_in["Roma"]:].startswith('Roma"')
+    hebrew = "מומלץ: [פיצה רומא](https://pizzaroma.test), ואחריה נאפולי. בנאפולי יש גם משלוחים."
+    assert mentions(hebrew, names) == {"own": hebrew.index("פיצה"), "Napoli": hebrew.index("נאפולי")}
+    assert mentions("Romania and Romans love pizza; so does Napolitano.", names) == {}
+
+
+def test_checks_that_measured_different_things_are_not_compared(tmp_path):
+    Site.pages, Site.site = [page("/")], {}
+    assistant = FakeAssistant("A", {"best widgets?": Answer("Try Globex.")})
+    client = create_app(str(tmp_path / "w.sqlite3"), allow_private=True, background=False,
+                        collectors=lambda cfg: [Site(), AiVisibility([assistant])]).test_client()
+    client.post("/scan", data={"name": "Acme", "site": "acme.test"})          # the site alone: 100
+    client.post("/scan", data={"name": "Acme", "site": "acme.test", "questions": "best widgets?"})
+    html = client.get("/runs/2").get_data(as_text=True)
+    assert "<b>50</b>" in html and "מאז הבדיקה הקודמת" not in html   # not "fell by 50 points"
+    client.post("/runs/2/again")
+    assert "הציון לא השתנה" in client.get("/runs/3").get_data(as_text=True)
+
+
+def test_a_task_that_was_not_measured_again_is_not_called_fixed():
+    from bvm.report import changes
+    old = [Finding("technical-seo", "sitemap", "רשימת דפים", "d", "h", [], 3, 1),
+           Finding("ai-gap", "ai-share", "להופיע ב-AI", "d", "h", [], 4, 4)]
+    previous = {"date": "01.01.2026", "score": 60, "findings": old, "parts": {"site", "ai"}}
+    assert changes(previous, 95, [], {"site"}) is None                  # the AI part did not run
+    same = changes(previous, 95, [], {"site", "ai"})
+    assert same["fixed"] == ["רשימת דפים", "להופיע ב-AI"] and same["delta"] == 35
+
+
+def test_a_change_of_one_point_is_said_in_the_singular(app_client):
+    clean = [page("/")] + [page(f"/p{n}") for n in range(19)]
+    Site.pages, Site.site = clean[:-1] + [page("/b", images_missing_alt=1)], {"has_sitemap": True}
+    start(app_client)
+    Site.pages = clean
+    app_client.post("/runs/1/again")
+    since = app_client.get("/runs/2").get_data(as_text=True).split('class="since"')[1]
+    assert "הציון עלה בנקודה אחת" in since and "ב-1 נקודות" not in since
+
+
+def test_two_requests_that_upgrade_an_old_notebook_together_both_succeed(tmp_path, monkeypatch):
+    import sqlite3
+
+    import bvm.store as store_module
+    path = tmp_path / "old.sqlite3"
+    db = sqlite3.connect(path)
+    db.executescript("CREATE TABLE runs (id INTEGER PRIMARY KEY AUTOINCREMENT, client TEXT NOT NULL,"
+                     " started_at TEXT NOT NULL, finished_at TEXT, status TEXT NOT NULL DEFAULT"
+                     " 'running', config TEXT NOT NULL DEFAULT '{}');")
+    db.close()
+    Store(path).close()                                                 # the first one upgrades
+    # The second saw the old columns a moment earlier and tries to add them again.
+    monkeypatch.setattr(store_module, "_columns", lambda db, table: set())
+    Store(path).close()
+
+
+def test_the_address_to_pass_on_is_the_one_the_visitor_is_really_on(app_client):
+    html = app_client.get(start(app_client)).get_data(as_text=True)
+    assert 'data-share="/runs/1"' in html and "location.origin" in html
+
+
+# --- checks made before personal links and before the new score ------------------------
+
+def test_the_operator_can_give_an_old_check_its_personal_link(tmp_path):
+    from click.testing import CliRunner
+
+    from bvm.cli import main
+    path = str(tmp_path / "w.sqlite3")
+    store = Store(path)
+    run_id = store.start_run("acme", {"name": "Acme", "slug": "acme", "site": "https://acme.test"})
+    store.finish_run(run_id)
+    store.close()
+    out = CliRunner().invoke(main, ["link", str(run_id), "--db", path])
+    assert out.exit_code == 0
+    link = out.output.strip().split()[-1]
+    assert link.startswith(f"/runs/{run_id}?key=") and len(link.split("key=")[1]) >= 20
+    again = CliRunner().invoke(main, ["link", str(run_id), "--db", path])
+    assert again.output.strip().split()[-1] == link                     # the same link, not a new one
+    client = create_app(path, allow_private=True, background=False,
+                        collectors=lambda cfg: []).test_client()
+    assert "למחוק לצמיתות" in client.get(link).get_data(as_text=True)
+    assert client.post(link.replace("?", "/delete?")).status_code == 302
+    assert CliRunner().invoke(main, ["link", "55", "--db", path]).exit_code != 0
+
+
+def test_old_checks_are_scored_again_from_what_was_collected(tmp_path):
+    from click.testing import CliRunner
+
+    from bvm.cli import main
+    from bvm.scoring import SCORING
+    path = str(tmp_path / "w.sqlite3")
+    store = Store(path)
+    cfg = ClientConfig("Acme", "acme", "https://acme.test")
+    run_id = store.start_run("acme", cfg.to_dict())
+    facts = [site_fact(), page("/"), *[page(f"/p{n}") for n in range(18)], page("/last", title="")]
+    store.save_facts(run_id, "acme", facts)
+    # As the old version saved it: no extent, the old full price, no score on the run.
+    store.save_findings(run_id, "acme", [Finding("technical-seo", "missing-title", "t", "d", "h",
+                                                 ["x"], 4, 1)])
+    store.finish_run(run_id)
+    failed = store.start_run("acme", cfg.to_dict())
+    store.finish_run(failed, status="failed")
+    store.close()
+
+    out = CliRunner().invoke(main, ["rescore", "--db", path])
+    assert out.exit_code == 0 and "1" in out.output
+    store = Store(path)
+    run = store.get_run(run_id)
+    finding = store.load_findings(run_id)[0]
+    assert (run["score"], run["scoring"]) == (96, SCORING)
+    assert (finding.key, finding.affected, finding.of) == ("missing-title", 1, 20)
+    assert store.get_run(failed)["score"] is None                        # a failed check stays so
+    assert store.previous_run("acme", before=99, scoring=SCORING)["id"] == run_id
+    assert "0" in CliRunner().invoke(main, ["rescore", "--db", path]).output   # nothing left to do

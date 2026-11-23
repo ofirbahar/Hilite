@@ -7,7 +7,9 @@
     <p>שם העסק וכתובת. זה הכול.</p>
   </div>
 
-  {% if deleted %}<p class="done" role="status">הבדיקה נמחקה.</p>{% endif %}
+  {% if deleted %}<p class="done" role="status">הבדיקה נמחקה.</p>
+  <script>/* Said once: a refresh or a bookmark of this page must not say it again. */
+  if (window.history && history.replaceState) history.replaceState(null, '', location.pathname);</script>{% endif %}
 
   <form method="post" action="{{ url_for('scan') }}">
     {% if error %}<div class="alert" role="alert">{{ error }}</div>{% endif %}

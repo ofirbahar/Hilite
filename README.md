@@ -75,7 +75,8 @@ The report shows this under "איך חושב הציון", so the number can alwa
 - A problem found on some of the pages costs less than the same problem everywhere: 40% of
   the points when it is on a single page, rising to all of them when half the pages have
   it. Problems about the whole site (no sitemap, AI crawlers blocked) always cost it all.
-  The report shows "3 מתוך 30 דפים" next to each such line.
+  A problem on the home page also costs it all. The report shows "3 מתוך 30 דפים" next
+  to each discounted line.
 - A task whose key starts with `check-` costs nothing. These are things that are usually
   deliberate (inner pages hidden from Google, pages closed to crawlers) or that could not
   be verified.
@@ -93,18 +94,28 @@ The report shows this under "איך חושב הציון", so the number can alwa
   links to the address that was checked is taken as certain; otherwise the name must
   match and the city decides between namesakes. When nothing clearly matches, the report
   shows what Google found under "לוודא שזה העסק שלך בגוגל" and scores none of it.
+  A name that only contains the business's name ("Roma" in "Roma Hair Salon") is accepted
+  only in the city the owner gave. On a platform the whole address must match, including
+  what follows the question mark.
 
 ## Checking again, deleting, and the contact address
 
 - **Check again.** Every report has a "בדוק שוב" button that scans the same business with
   what was entered the first time. The new report says how the score moved since the last
   check and lists what was fixed and what is new. The score is saved with each check;
-  two checks are compared only when the same version of the formula scored both.
+  two checks are compared only when the same version of the formula scored both and both
+  measured the same things (site, Google profile, AI answers). Otherwise the score would
+  move for a reason that is not the owner's doing.
 - **Delete.** A check opens on a personal link (`/runs/12?key=...`). Only that link shows
   "מחיקת הבדיקה", which removes the report and everything collected for it. The plain
   address (`/runs/12`) only reads, and is the one to share. There are no accounts and no
   cookies; the key is the whole permission, and it is never listed or sent to other sites.
 - **Deleting for someone who lost their link:** `python -m bvm delete 12`.
+- **Checks made before personal links existed:** `python -m bvm link 12` prints a personal
+  link for check 12, creating one if it has none.
+- **After an upgrade that changed the formula:** `python -m bvm rescore` scores the older
+  checks again from the pages they already read (nothing is fetched), so new checks can
+  be compared with them.
 - **Contact address.** Set `HILITE_CONTACT` (or `python -m bvm web --contact you@example.com`)
   and the privacy page shows it for questions and deletion requests. With nothing set, the
   page shows no address.

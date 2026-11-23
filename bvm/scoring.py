@@ -84,6 +84,24 @@ def measured(facts: list[Fact], findings: list[Finding]) -> int:
     return count
 
 
+def parts(facts: list[Fact]) -> set[str]:
+    """Which of the three measurements this check really has: "site", "google", "ai".
+
+    Two checks are compared only when they have the same ones. Otherwise the score moves
+    because of what was measured, not because of anything the owner did, and a task that
+    was simply not measured again would look fixed.
+    """
+    have = set()
+    for fact in facts:
+        if fact.collector == "site-crawler" and fact.kind in ("page", "site"):
+            have.add("site")
+        elif fact.kind == "google_profile" and fact.data.get("match") != "unsure":
+            have.add("google")
+        elif fact.collector == "ai-visibility" and fact.kind == "ai_answer":
+            have.add("ai")
+    return have
+
+
 def final_score(cfg: ClientConfig, facts: list[Fact], findings: list[Finding],
                 failures: list[tuple[str, str]]) -> int | None:
     """The number the report shows. None when the check was cut off or read nothing."""

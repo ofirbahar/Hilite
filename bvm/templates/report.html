@@ -54,8 +54,8 @@
   {% if since %}
   <section class="since" aria-label="מאז הבדיקה הקודמת">
     <p class="moved">
-      {% if since.delta > 0 %}<b class="up">הציון עלה ב-{{ since.delta }} נקודות</b>
-      {% elif since.delta < 0 %}<b class="down">הציון ירד ב-{{ -since.delta }} נקודות</b>
+      {% if since.delta > 0 %}<b class="up">הציון עלה {{ 'בנקודה אחת' if since.delta == 1 else 'ב-%d נקודות' % since.delta }}</b>
+      {% elif since.delta < 0 %}<b class="down">הציון ירד {{ 'בנקודה אחת' if since.delta == -1 else 'ב-%d נקודות' % -since.delta }}</b>
       {% else %}<b>הציון לא השתנה</b>{% endif %}
       <span>מאז הבדיקה הקודמת, ב-{{ since.date }}{% if since.delta %} (מ-{{ since.before }} ל-{{ since.after }}){% endif %}.</span>
     </p>
@@ -123,7 +123,7 @@
     <summary>איך חושב הציון</summary>
     <div>
       {% if scanned %}
-      <p>מתחילים מ-100. כל בעיה שנמדדה מורידה נקודות לפי החומרה שלה. בעיה שנמצאה רק בחלק מהדפים מורידה פחות, ומחצי מהדפים ומעלה היא מורידה את מלוא הנקודות. משימה שמתחילה ב"לבדוק" או ב"לוודא" לא מורידה נקודות.</p>
+      <p>מתחילים מ-100. כל בעיה שנמדדה מורידה נקודות לפי החומרה שלה. בעיה שנמצאה רק בחלק מהדפים מורידה פחות. מחצי מהדפים ומעלה, או כשהיא בדף הבית, היא מורידה את מלוא הנקודות. משימה שמתחילה ב"לבדוק" או ב"לוודא" לא מורידה נקודות.</p>
       <ul>
         {% for key, title, points in lost %}<li><span>{{ title }}{% if key in extent %} <small>{% if extent[key][1] == 1 %}בדף היחיד שנבדק{% else %}{{ extent[key][0] }} מתוך {{ extent[key][1] }} דפים{% endif %}</small>{% endif %}</span><b dir="ltr">−{{ points }}</b></li>{% endfor %}
         {% if not lost %}<li><span>לא נמצאו בעיות שמורידות נקודות</span><b>0</b></li>{% endif %}
@@ -158,10 +158,19 @@
       </form>
     </details>
     <p class="note">הכתובת של העמוד הזה היא הקישור האישי שלך. רק ממנה אפשר למחוק את הבדיקה, אז כדאי לשמור אותה ולא להעביר אותה הלאה.</p>
-    <p class="note share">לשיתוף הדוח, זו הכתובת לקריאה בלבד:<br><bdi>{{ share_url }}</bdi></p>
+    <p class="note share">לשיתוף הדוח, זו הכתובת לקריאה בלבד:<br><bdi data-share="{{ share_path }}">{{ share_url }}</bdi></p>
     {% endif %}
   </section>
   {% endif %}
 </main>
+{% if share_path %}
+<script>
+/* The server may sit behind another address. The browser knows the one the visitor is on. */
+(function () {
+  var el = document.querySelector('[data-share]');
+  if (el) el.textContent = location.origin + el.getAttribute('data-share');
+})();
+</script>
+{% endif %}
 </body>
 </html>

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import secrets
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
@@ -66,6 +67,10 @@ ADDED = [
 ]
 
 
+def _columns(db: sqlite3.Connection, table: str) -> set[str]:
+    return {row["name"] for row in db.execute(f"PRAGMA table_info({table})")}
+
+
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
@@ -77,8 +82,13 @@ class Store:
         self.db.row_factory = sqlite3.Row
         self.db.executescript(SCHEMA)
         for table, column, definition in ADDED:      # bring an older notebook up to date
-            if column not in {row["name"] for row in self.db.execute(f"PRAGMA table_info({table})")}:
-                self.db.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+            if column not in _columns(self.db, table):
+                try:
+                    self.db.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+                except sqlite3.OperationalError as exc:
+                    # Another request added it between our look and our try. That is fine.
+                    if "duplicate column" not in str(exc).lower():
+                        raise
         self.db.commit()
 
     def start_run(self, client: str, config: dict | None = None, key: str | None = None) -> int:
@@ -103,6 +113,34 @@ class Store:
             " AND score IS NOT NULL AND (? IS NULL OR scoring = ?) ORDER BY id DESC LIMIT 1",
             (client, before, scoring, scoring)).fetchone()
         return dict(row) if row else None
+
+    def ensure_key(self, run_id: int) -> str | None:
+        """The run's secret, made now if the run was started before there were secrets.
+        None when there is no such run."""
+        row = self.db.execute("SELECT key FROM runs WHERE id = ?", (run_id,)).fetchone()
+        if row is None:
+            return None
+        if row["key"]:
+            return row["key"]
+        key = secrets.token_urlsafe(24)
+        self.db.execute("UPDATE runs SET key = ? WHERE id = ?", (key, run_id))
+        self.db.commit()
+        return key
+
+    def unscored(self, scoring: int) -> list[int]:
+        """Finished checks that were scored by another version of the formula, or not at all."""
+        rows = self.db.execute("SELECT id FROM runs WHERE status = 'done'"
+                               " AND (scoring IS NULL OR scoring != ?) ORDER BY id", (scoring,))
+        return [row["id"] for row in rows]
+
+    def replace_findings(self, run_id: int, client: str, findings: list[Finding]) -> None:
+        self.db.execute("DELETE FROM findings WHERE run_id = ?", (run_id,))
+        self.save_findings(run_id, client, findings)
+
+    def set_score(self, run_id: int, score: int | None, scoring: int) -> None:
+        self.db.execute("UPDATE runs SET score = ?, scoring = ? WHERE id = ?",
+                        (score, scoring, run_id))
+        self.db.commit()
 
     def delete_run(self, run_id: int) -> bool:
         """Removes a check and everything collected for it. False when there is no such check."""

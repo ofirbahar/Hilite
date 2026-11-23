@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from datetime import date
 from pathlib import Path
+from urllib.parse import urlparse
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
@@ -11,7 +12,8 @@ from .config import ClientConfig
 from .models import Finding
 from .pipeline import RunResult
 from .scoring import (CAP, CAPPED, CORE_PARTS, NOT_READ, PENALTY, SCORED,  # noqa: F401
-                      breakdown, final_score, grade, measured, points, score, site_score)
+                      breakdown, final_score, grade, measured, parts, points, score,
+                      site_score)
 
 TOP_N = 3
 PART_NAMES = {
@@ -41,13 +43,17 @@ def ai_questions(result: RunResult) -> list[dict]:
     return [{"question": q, "answers": rows} for q, rows in grouped.items()]
 
 
-def changes(previous: dict | None, value: int | None, findings: list[Finding]) -> dict | None:
+def changes(previous: dict | None, value: int | None, findings: list[Finding],
+            measured_now: set[str]) -> dict | None:
     """What moved since the last check of this business: the score, what was fixed, what is new.
 
-    `previous` is {"date", "score", "findings"}. Nothing is said when either check has no
-    score: a task that is missing because a scan was cut short was not fixed.
+    `previous` is {"date", "score", "findings", "parts"}. Nothing is said when either check
+    has no score, or when the two did not measure the same things (see scoring.parts): a
+    task that is missing because its check did not run this time was not fixed.
     """
     if previous is None or value is None or previous.get("score") is None:
+        return None
+    if previous.get("parts") != measured_now:
         return None
     now = {f.key for f in findings}
     before = {f.key for f in previous["findings"]}
@@ -64,7 +70,8 @@ def changes(previous: dict | None, value: int | None, findings: list[Finding]) -
 def render_report(cfg: ClientConfig, result: RunResult, today: date | None = None,
                   back_url: str = "", home_url: str = "", previous: dict | None = None,
                   again_url: str = "", delete_url: str = "", share_url: str = "") -> str:
-    """previous: the last check of the same business, for the "what changed" lines.
+    """previous: the last check of the same business, for the "what changed" lines:
+    {"date", "score", "findings", "parts"}.
     again_url, delete_url: where the report's two buttons post to; empty hides the button.
     share_url: the report's plain address, shown to the owner as the one to pass on."""
     scanned = measured(result.facts, result.findings)
@@ -87,10 +94,11 @@ def render_report(cfg: ClientConfig, result: RunResult, today: date | None = Non
         ai=ai,
         lost=breakdown(result.findings) if scanned else [],
         extent={f.key: (f.affected, f.of) for f in result.findings if f.of},
-        since=changes(previous, value, result.findings),
+        since=changes(previous, value, result.findings, parts(result.facts)),
         again_url=again_url,
         delete_url=delete_url,
         share_url=share_url,
+        share_path=urlparse(share_url).path if share_url else "",
         site_part=site_score(result.findings),
         capped=any(f.key in CAPPED for f in result.findings),
         scanned=scanned,

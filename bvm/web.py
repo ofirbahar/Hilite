@@ -19,7 +19,7 @@ from .config import (ClientConfig, ConfigError, is_public_address, platform_of,
 from .pipeline import RunResult, default_collectors
 from .pipeline import run as run_pipeline
 from .report import render_report
-from .scoring import SCORING
+from .scoring import SCORING, parts
 from .store import Store
 
 MAX_COMPETITORS = 5
@@ -228,7 +228,8 @@ def create_app(db_path: str = "bvm.sqlite3", allow_private: bool = False,
             if earlier is not None and run.get("scoring") == SCORING:
                 earlier = {"date": _day(earlier["started_at"]).strftime("%d.%m.%Y"),
                            "score": earlier["score"],
-                           "findings": notebook.load_findings(earlier["id"])}
+                           "findings": notebook.load_findings(earlier["id"]),
+                           "parts": parts(notebook.load_facts(earlier["id"]))}
             else:
                 earlier = None
         finally:

@@ -47,21 +47,29 @@ def _same_name(wanted: str, found: str) -> int:
     return int(SequenceMatcher(None, " ".join(a), " ".join(b)).ratio() >= ALIKE)
 
 
-def _address(url: str) -> tuple[str, str]:
+def _address(url: str) -> tuple[str, str, str]:
+    """(host, path, what follows the question mark) in a form two spellings share."""
     parts = urlparse(url if "//" in url else "//" + url)
-    return (parts.hostname or "").lower().removeprefix("www."), parts.path.rstrip("/").lower()
+    return ((parts.hostname or "").lower().removeprefix("www."),
+            parts.path.rstrip("/").lower(), parts.query)
 
 
 def _same_site(cfg: ClientConfig, website: str) -> bool:
     """Is the website on the Google profile the address that was checked?"""
     if not website:
         return False
-    host, path = _address(website)
-    own_host, _ = _address(cfg.site)
+    host, path, query = _address(website)
+    own_host, own_path, own_query = _address(cfg.site + cfg.start_path)
     if host != own_host:
         return False
-    # Thousands of businesses share facebook.com, so there the whole address must match.
-    return not cfg.platform or path == _address(cfg.site + cfg.start_path)[1]
+    if cfg.platform:
+        # Thousands of businesses share facebook.com, so there the whole address must
+        # match, down to the "?id=" that tells two profile.php pages apart.
+        return (path, query) == (own_path, own_query)
+    # Elsewhere one may be a page inside the other (the site's Hebrew folder, its menu).
+    # Two different folders on one host are two sites: sites.google.com/view/a and /view/b.
+    return (not path or not own_path or path == own_path
+            or path.startswith(own_path + "/") or own_path.startswith(path + "/"))
 
 
 def best_match(cfg: ClientConfig, places: list[dict]) -> tuple[dict | None, str]:
@@ -69,7 +77,8 @@ def best_match(cfg: ClientConfig, places: list[dict]) -> tuple[dict | None, str]
 
     Google returns whatever resembles the search, so its first hit can be a namesake in
     another town. A profile that links to the address we checked is certain. Otherwise the
-    name has to match, and the city decides between places with the right name.
+    name has to match, and the city decides between places with the right name. A place
+    whose name only contains the business's name must also be in the city the owner gave.
     (None, "") when nothing is clearly this business.
     """
     ranked = []
@@ -77,6 +86,10 @@ def best_match(cfg: ClientConfig, places: list[dict]) -> tuple[dict | None, str]
         site = _same_site(cfg, place.get("websiteUri", ""))
         name = _same_name(cfg.name, (place.get("displayName") or {}).get("text", ""))
         city = bool(cfg.city) and cfg.city.strip().lower() in place.get("formattedAddress", "").lower()
+        # A name that merely holds the other ("Roma" in "Roma Hair Salon") is common among
+        # namesakes. When the owner named a city and the place is elsewhere, it is not theirs.
+        if name == 1 and cfg.city and not city:
+            name = 0
         if site or name:
             ranked.append(((site, bool(name), city, name, -index), place, "site" if site else "name"))
     if not ranked:
