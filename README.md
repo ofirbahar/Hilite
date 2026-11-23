@@ -70,8 +70,12 @@ but never costs points.
 
 The report shows this under "איך חושב הציון", so the number can always be checked.
 
-- The site part starts at 100. Each measured problem costs a fixed number of points by
-  its severity (15, 9, 5, 3 or 1), once per kind of problem.
+- The site part starts at 100. Each measured problem costs points by its severity
+  (at most 15, 9, 5, 3 or 1), once per kind of problem.
+- A problem found on some of the pages costs less than the same problem everywhere: 40% of
+  the points when it is on a single page, rising to all of them when half the pages have
+  it. Problems about the whole site (no sitemap, AI crawlers blocked) always cost it all.
+  The report shows "3 מתוך 30 דפים" next to each such line.
 - A task whose key starts with `check-` costs nothing. These are things that are usually
   deliberate (inner pages hidden from Google, pages closed to crawlers) or that could not
   be verified.
@@ -79,6 +83,31 @@ The report shows this under "איך חושב הציון", so the number can alwa
 - A site that could not be read, or a scan that was cut off, gets no score at all.
 - With an AI check, the final score is the average of the site part and the share of
   answers that mention the business.
+
+## What is checked carefully so the numbers are about the right business
+
+- **Names in AI answers.** The business and its competitors are looked for together and
+  the longest name wins, so a competitor called "Roma" is not counted in an answer that
+  only names "Pizza Roma" (and the other way round).
+- **The Google profile.** Google is asked for five candidates, not one. A profile that
+  links to the address that was checked is taken as certain; otherwise the name must
+  match and the city decides between namesakes. When nothing clearly matches, the report
+  shows what Google found under "לוודא שזה העסק שלך בגוגל" and scores none of it.
+
+## Checking again, deleting, and the contact address
+
+- **Check again.** Every report has a "בדוק שוב" button that scans the same business with
+  what was entered the first time. The new report says how the score moved since the last
+  check and lists what was fixed and what is new. The score is saved with each check;
+  two checks are compared only when the same version of the formula scored both.
+- **Delete.** A check opens on a personal link (`/runs/12?key=...`). Only that link shows
+  "מחיקת הבדיקה", which removes the report and everything collected for it. The plain
+  address (`/runs/12`) only reads, and is the one to share. There are no accounts and no
+  cookies; the key is the whole permission, and it is never listed or sent to other sites.
+- **Deleting for someone who lost their link:** `python -m bvm delete 12`.
+- **Contact address.** Set `HILITE_CONTACT` (or `python -m bvm web --contact you@example.com`)
+  and the privacy page shows it for questions and deletion requests. With nothing set, the
+  page shows no address.
 
 robots.txt is read the way search engines read it (the most specific rule wins), not in
 file order, so "what Google may read" matches what Google does.

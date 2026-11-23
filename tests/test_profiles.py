@@ -169,7 +169,7 @@ def test_google_profile_is_looked_up_by_name_and_city(cfg, places_api):
     sent = Places.seen[0]
     assert sent["path"] == "/v1/places:searchText" and sent["headers"]["X-Goog-Api-Key"] == "k1"
     assert sent["body"] == {"textQuery": "Pizza Roma Haifa", "regionCode": "IL",
-                            "languageCode": "he", "pageSize": 1}
+                            "languageCode": "he", "pageSize": 5}
     assert "places.userRatingCount" in sent["headers"]["X-Goog-FieldMask"]
     assert (fact.kind, fact.data["found"], fact.data["rating"], fact.data["reviews"]) == (
         "google_profile", True, 4.6, 212)
@@ -179,7 +179,7 @@ def test_google_profile_is_looked_up_by_name_and_city(cfg, places_api):
 def test_google_profile_findings(cfg, places_api):
     from bvm.analyzers.google_presence import GooglePresence
     from bvm.collectors.google_profile import GoogleProfile
-    cfg.platform = "פייסבוק"
+    cfg.platform, cfg.name = "פייסבוק", "Pizza Roma"
 
     Places.reply = {"places": [FULL]}                                  # complete: nothing to fix
     facts = GoogleProfile("k", base_url=places_api).collect(cfg)

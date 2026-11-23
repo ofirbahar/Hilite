@@ -163,10 +163,18 @@ class TechnicalSeo:
             google_checked = any(f.kind == "google_profile" for f in facts)
             return _business_page(site, pages, google_checked)
 
-        def add(key, title, detail, how, evidence, impact, effort, owner, tech):
+        def add(key, title, detail, how, evidence, impact, effort, owner, tech, among=None,
+                affected=None):
+            """among: the pages this check looked at. With it, the finding records how much
+            of the site it touches, and a problem on one page costs less than one on all."""
             if evidence or evidence is None:
-                findings.append(Finding(NAME, key, title, detail, how, list(evidence or []),
-                                        impact, effort, owner, tech))
+                found = Finding(NAME, key, title, detail, how, list(evidence or []),
+                                impact, effort, owner, tech)
+                if among:
+                    found.of = len(among)
+                    found.affected = min(found.of,
+                                         len(found.evidence) if affected is None else affected)
+                findings.append(found)
 
         if pages and not readable:
             # Nothing could be read, so every other check would be a guess. Say why instead.
@@ -195,7 +203,7 @@ class TechnicalSeo:
             "לעדכן את הקישור לדף שקיים.",
             [f"{p.subject} (הקישור נמצא בדף {p.data.get('linked_from') or 'הבית'})"
              for p in broken],
-            4, 2, WRITER, "קישורים שבורים (שגיאת 404)")
+            4, 2, WRITER, "קישורים שבורים (שגיאת 404)", among=pages)
 
         # A hidden home page is a fault. Hidden or closed inner pages are usually deliberate
         # (a cart, a login, search results), so they are listed to be looked at and cost
@@ -227,13 +235,13 @@ class TechnicalSeo:
         add("missing-title", "להוסיף כותרות לדפים",
             _count(len(no_title), "דף אחד מופיע", "דפים מופיעים") + " בגוגל בלי כותרת.",
             "לכתוב לכל דף כותרת קצרה.",
-            [p.subject for p in no_title], 4, 1, WRITER, "תג title חסר")
+            [p.subject for p in no_title], 4, 1, WRITER, "תג title חסר", among=indexable)
 
         no_desc = [p for p in indexable if not p.data.get("description")]
         add("missing-description", "להוסיף תיאורים לדפים",
             _count(len(no_desc), "דף אחד מופיע", "דפים מופיעים") + " בגוגל בלי תיאור.",
             "לכתוב לכל דף משפט שמסביר מה יש בו.",
-            [p.subject for p in no_desc], 3, 1, WRITER, "תג meta description חסר")
+            [p.subject for p in no_desc], 3, 1, WRITER, "תג meta description חסר", among=indexable)
 
         # Two addresses that name the same real page (a list and the same list sorted)
         # are one page, so they are not "two pages with one title".
@@ -246,7 +254,8 @@ class TechnicalSeo:
         add("duplicate-title", "לתת לכל דף כותרת משלו",
             "כמה דפים נושאים את אותה כותרת.",
             "לשנות את הכותרות כך שכל אחת תהיה שונה.",
-            duplicates, 3, 2, WRITER, "תגי title כפולים")
+            duplicates, 3, 2, WRITER, "תגי title כפולים", among=indexable,
+            affected=sum(len(urls) for urls in by_title.values() if len(urls) > 1))
 
         h1_issues = [f"{p.subject} ({len(p.data.get('h1', []))} כותרות ראשיות)"
                      for p in indexable if len(p.data.get("h1", [])) != 1]
@@ -254,14 +263,14 @@ class TechnicalSeo:
             ("בדף אחד" if len(h1_issues) == 1 else f"ב-{len(h1_issues)} דפים")
             + " אין כותרת ראשית אחת.",
             "להשאיר כותרת ראשית אחת בכל דף.",
-            h1_issues, 2, 2, BUILDER, "תג H1 חסר או כפול")
+            h1_issues, 2, 2, BUILDER, "תג H1 חסר או כפול", among=indexable)
 
         slow = [f"{p.subject} ({p.data.get('seconds')} שניות)"
                 for p in readable if p.data.get("seconds", 0) > cfg.slow_page_seconds]
         add("slow-pages", "לזרז דפים איטיים",
             _count(len(slow), "דף אחד נטען", "דפים נטענים") + " לאט.",
             "להקטין תמונות כבדות ולבדוק את האחסון.",
-            slow, 3, 4, BUILDER, "זמן טעינה איטי")
+            slow, 3, 4, BUILDER, "זמן טעינה איטי", among=readable)
 
         no_schema = [p.subject for p in indexable if not p.data.get("has_structured_data")]
         if indexable and len(no_schema) == len(indexable):
@@ -275,7 +284,7 @@ class TechnicalSeo:
         add("image-alt", "להוסיף תיאור לתמונות",
             "יש תמונות שמנועי חיפוש לא מבינים.",
             "לכתוב לכל תמונה תיאור של כמה מילים.",
-            alt, 2, 2, WRITER, "תכונת alt חסרה בתמונות")
+            alt, 2, 2, WRITER, "תכונת alt חסרה בתמונות", among=indexable)
 
         if site is not None:
             if not site.data.get("has_sitemap"):

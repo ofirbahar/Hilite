@@ -28,6 +28,8 @@ class Finding:
     effort: int = 3    # 1 (minutes) .. 5 (weeks)
     owner: str = ""    # who usually does the fix, in the reader's words
     tech: str = ""     # the technical name of the problem, for whoever fixes it
+    affected: int = 0  # how many pages have the problem...
+    of: int = 0        # ...out of how many were checked. 0 = it is about the whole site
 
     @property
     def score(self) -> int:

@@ -121,6 +121,23 @@ summary:active { opacity: 0.6; }
 .how li b { font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .how .sum { border-top: 1px solid var(--line); margin-top: 6px; padding-top: 10px; color: var(--ink); font-weight: 600; }
 .how .sum b { font-weight: 700; }
+.how li small { display: block; font-size: 13px; }
+.since { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px 20px 18px;
+  display: flex; flex-direction: column; gap: 14px; }
+.since .moved { display: flex; flex-direction: column; gap: 2px; color: var(--muted); font-size: 15px; }
+.since .moved b { color: var(--ink); font-size: 19px; font-weight: 700; }
+.since .moved .up { color: var(--good); } .since .moved .down { color: var(--bad); }
+.since .diff { border-top: 1px solid var(--line); padding-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.since h3 { font-size: 13px; font-weight: 600; color: var(--muted); }
+.since li { font-size: 15px; }
+.after { display: flex; flex-direction: column; align-items: center; gap: 14px; padding-top: 8px; }
+.after form { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.remove { font-size: 15px; text-align: center; }
+.remove > summary { display: inline-block; min-height: 44px; padding: 12px 8px; color: var(--muted); text-decoration: underline; }
+.remove form { padding: 4px 0 8px; color: var(--ink); }
+.btn.danger { background: var(--bad); }
+.share bdi { color: var(--ink); font-size: 14px; overflow-wrap: anywhere; user-select: all; }
+.done { background: #e4f4ea; color: var(--good); border-radius: 10px; padding: 12px 16px; font-size: 15px; font-weight: 500; }
 .note { font-size: 14px; color: var(--muted); text-align: center; }
 .note bdi { font-size: 13px; }
 
@@ -144,6 +161,7 @@ input::placeholder, textarea::placeholder { color: #66716c; }
 .btn svg.ico { width: 16px; height: 16px; transition: transform 200ms var(--ease-out); }
 @media (hover: hover) and (pointer: fine) {
   .btn:hover { background: var(--accent-press); }
+  .btn.danger:hover { background: #a3251f; }
   .btn:hover svg.ico { transform: translateX(-4px); }
 }
 .prose ul { list-style: disc; padding-inline-start: 20px; display: flex; flex-direction: column; gap: 6px; }

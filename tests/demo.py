@@ -103,6 +103,7 @@ def main(out_dir: str) -> None:
     head = landing.split("</head>", 1)[0].replace(
         "<title>Brand Visibility Monitor</title>", "<title>Brand Visibility Monitor</title>")
     bar = landing.split("<body>", 1)[1].split("</header>", 1)[0] + "</header>"
+    report = re.sub(r'<section class="after">.*?</section>', "", report, flags=re.S)
     report_body = (_body(report)
                    .replace('<span class="who">Acme</span>', '<span class="who" data-biz>Acme</span>')
                    .replace("<bdi>https://acme-demo.test</bdi>", "<bdi data-site>https://acme-demo.test</bdi>", 1)

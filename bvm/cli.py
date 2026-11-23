@@ -36,15 +36,36 @@ def run(settings: str, db: str, out: str) -> None:
 
 
 @main.command()
+@click.argument("run_id", type=int)
+@click.option("--db", default="bvm.sqlite3", show_default=True, help="Notebook database file.")
+def delete(run_id: int, db: str) -> None:
+    """Delete one check and everything collected for it (the number in /runs/NUMBER).
+
+    For when someone writes in and asks for their check to be removed.
+    """
+    store = Store(db)
+    try:
+        removed = store.delete_run(run_id)
+    finally:
+        store.close()
+    if not removed:
+        raise click.ClickException(f"There is no check number {run_id}.")
+    click.echo(f"Check {run_id} was deleted.")
+
+
+@main.command()
 @click.option("--db", default="bvm.sqlite3", show_default=True, help="Notebook database file.")
 @click.option("--port", default=8000, show_default=True)
 @click.option("--allow-private", is_flag=True,
               help="Allow scanning addresses on this machine or network (development only).")
-def web(db: str, port: int, allow_private: bool) -> None:
+@click.option("--contact", default=None,
+              help="Address shown on the privacy page for questions and deletion requests "
+                   "(default: the HILITE_CONTACT environment variable).")
+def web(db: str, port: int, allow_private: bool, contact: str | None) -> None:
     """Start the web interface on this machine."""
     from .web import create_app
 
-    create_app(db, allow_private=allow_private).run(host="127.0.0.1", port=port)
+    create_app(db, allow_private=allow_private, contact=contact).run(host="127.0.0.1", port=port)
 
 
 if __name__ == "__main__":

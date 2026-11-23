@@ -200,7 +200,7 @@ def test_web_scan_shows_the_report_and_lists_it(site, tmp_path):
     posted = client.post("/scan", data={
         "name": "Acme", "site": site + "/some/page", "competitors": "Globex, Initech",
         "questions": "\n".join(QUESTIONS)})
-    assert posted.status_code == 302 and posted.headers["Location"].endswith("/runs/1")
+    assert posted.status_code == 302 and "/runs/1?key=" in posted.headers["Location"]
     report = client.get("/runs/1").get_data(as_text=True)
     assert "מה לתקן קודם" in report and "מתוך 100" in report
     assert "מה ה-AI עונה" in report and "בדיקה חדשה" in report

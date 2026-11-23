@@ -127,7 +127,9 @@ def test_text_colours_are_readable():
              (token("muted"), token("fill")), (placeholder, token("card")),
              (token("accent"), token("paper")), ("#ffffff", token("accent")),
              (token("night-muted"), token("night")), (token("good"), "#e4f4ea"),
-             (token("warn"), "#fcf0d6"), (token("bad"), "#fbe6e4")]
+             (token("warn"), "#fcf0d6"), (token("bad"), "#fbe6e4"),
+             (token("good"), token("card")), (token("bad"), token("card")),
+             ("#ffffff", token("bad")), ("#ffffff", "#a3251f")]
     for foreground, background in pairs:
         assert contrast(foreground, background) >= 4.5, (foreground, background)
     border = re.search(r"input, textarea \{[^}]*border: 1px solid (#[0-9a-f]{6})", css).group(1)

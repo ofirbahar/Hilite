@@ -17,6 +17,7 @@ from .collectors.google_profile import profile_from_env
 from .collectors.site_crawler import SiteCrawler
 from .config import ClientConfig
 from .models import Fact, Finding
+from .scoring import SCORING, final_score
 from .store import Store
 
 
@@ -65,5 +66,6 @@ def run(cfg: ClientConfig, store: Store, collectors=None, analyzers=None,
 
     findings.sort(key=lambda f: (-f.score, -f.impact, f.key))
     store.save_findings(run_id, cfg.slug, findings)
-    store.finish_run(run_id)
-    return RunResult(run_id, facts, findings, store.load_failures(run_id))
+    failures = store.load_failures(run_id)
+    store.finish_run(run_id, score=final_score(cfg, facts, findings, failures), scoring=SCORING)
+    return RunResult(run_id, facts, findings, failures)

@@ -39,6 +39,16 @@ class GooglePresence:
         def add(key, title, detail, how, impact, effort, tech):
             found.append(Finding(NAME, key, title, detail, how, where, impact, effort, OWNER, tech))
 
+        if p.get("match") == "unsure":
+            # Rating, reviews and hours of what may be someone else's business say nothing
+            # about this one, so none of them is reported. The key starts with "check-":
+            # it costs no points.
+            add("check-google-match", "לוודא שזה העסק שלך בגוגל",
+                "מצאנו בגוגל עסק בשם דומה, ולא בטוח שהוא שלך.",
+                "לפתוח את הקישור. אם זה העסק שלך, להזין בבדיקה את השם כפי שהוא מופיע בגוגל.",
+                2, 1, "השם והאתר בפרופיל לא תואמים למה שהוזן (לא נכלל בציון)")
+            return found
+
         if p.get("status", "").startswith("CLOSED"):
             add("google-closed", "לעדכן שהעסק פתוח", "בגוגל העסק מסומן כסגור.",
                 "לעדכן את הסטטוס בפרופיל העסק בגוגל.", 5, 1, f"businessStatus: {p['status']}")

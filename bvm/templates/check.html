@@ -7,6 +7,8 @@
     <p>שם העסק וכתובת. זה הכול.</p>
   </div>
 
+  {% if deleted %}<p class="done" role="status">הבדיקה נמחקה.</p>{% endif %}
+
   <form method="post" action="{{ url_for('scan') }}">
     {% if error %}<div class="alert" role="alert">{{ error }}</div>{% endif %}
     <div class="field">

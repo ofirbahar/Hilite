@@ -17,24 +17,39 @@ MAX_QUESTIONS = 25
 URL_PATTERN = re.compile(r"https?://[^\s)\]>\"']+")
 # Hebrew joins "and", "in", "to", "the"... to the next word: "באקמה", "ול-Acme".
 HEBREW_PREFIX = r"(?:[ושהבלכמ]{1,3}[-־]?)?"
+OWN = object()  # the label of the business itself among the names looked for
 
 
 class NotConfigured(RuntimeError):
     pass
 
 
+def mentions(text: str, names: dict) -> dict:
+    """Where each of the known businesses is first named in the text.
+
+    `names` maps a label to the ways that business is written; the result maps each label
+    that was found to the character position of its first mention. Every stretch of text
+    counts for one business only, and the longest name wins: in "Pizza Roma", a business
+    called "Pizza Roma" is named and a rival called "Roma" is not.
+    """
+    spans = []
+    for label, ways in names.items():
+        for name in {way.strip() for way in ways if way.strip()}:
+            pattern = rf"(?<!\w){HEBREW_PREFIX}({re.escape(name)})(?!\w)"
+            spans.extend((match.start(1), match.end(1), label)
+                         for match in re.finditer(pattern, text, flags=re.IGNORECASE))
+    taken: list[tuple[int, int]] = []
+    found: dict = {}
+    for start, end, label in sorted(spans, key=lambda span: (span[0] - span[1], span[0])):
+        if all(end <= a or start >= b for a, b in taken):
+            taken.append((start, end))
+            found[label] = min(start, found.get(label, start))
+    return found
+
+
 def first_mention(text: str, names: list[str]) -> int | None:
     """Character position of the earliest mention of any of the names, or None."""
-    positions = []
-    for name in names:
-        name = name.strip()
-        if not name:
-            continue
-        match = re.search(rf"(?<!\w){HEBREW_PREFIX}({re.escape(name)})(?!\w)", text,
-                          flags=re.IGNORECASE)
-        if match:
-            positions.append(match.start(1))
-    return min(positions) if positions else None
+    return mentions(text, {"": names}).get("")
 
 
 def domain_of(url: str) -> str:
@@ -66,8 +81,13 @@ class AiVisibility:
                 except Exception as exc:
                     errors.append(f"{provider.name}: {type(exc).__name__}")
                     continue
-                own = first_mention(answer.text, own_names)
-                rivals = {c: first_mention(answer.text, [c]) for c in cfg.competitors}
+                # The business and its rivals are looked for together, so a rival whose
+                # name is part of the business's name is not counted when only the
+                # business was named (and the other way round).
+                named = mentions(answer.text, {OWN: own_names,
+                                               **{c: [c] for c in cfg.competitors}})
+                own = named.get(OWN)
+                rivals = {c: named.get(c) for c in cfg.competitors}
                 mentioned_rivals = sorted((c for c, pos in rivals.items() if pos is not None),
                                           key=lambda c: rivals[c])
                 order = sorted([pos for pos in rivals.values() if pos is not None]

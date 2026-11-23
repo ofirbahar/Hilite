@@ -10,6 +10,8 @@ from .analyzers.ai_gap import ai_answers, summarize
 from .config import ClientConfig
 from .models import Finding
 from .pipeline import RunResult
+from .scoring import (CAP, CAPPED, CORE_PARTS, NOT_READ, PENALTY, SCORED,  # noqa: F401
+                      breakdown, final_score, grade, measured, points, score, site_score)
 
 TOP_N = 3
 PART_NAMES = {
@@ -21,62 +23,10 @@ PART_NAMES = {
     "ai-gap": "ניתוח תשובות ה-AI",
     "pipeline": "הבדיקה",
 }
-# How many points one site problem costs, by its impact (5 = critical).
-PENALTY = {5: 15, 4: 9, 3: 5, 2: 3, 1: 1}
-# Whose findings count: what we measured on the web. A task whose key starts with "check-"
-# is advice we could not verify, so it never costs points.
-SCORED = ("technical-seo", "google-presence")
-# A home page Google cannot show is never "good", however tidy the rest is.
-CAP = 49
-CAPPED = ("noindex", "home-closed-to-google")
-# The site could not be read at all, so it has no site score.
-NOT_READ = ("site-blocked", "site-unreachable", "site-moved")
-# When one of these parts failed, the findings are incomplete and no score is honest.
-CORE_PARTS = ("site-crawler", "technical-seo", "pipeline")
-
 _env = Environment(
     loader=FileSystemLoader(Path(__file__).parent / "templates"),
     autoescape=select_autoescape(["html"]),
 )
-
-
-def breakdown(findings: list[Finding]) -> list[tuple[str, str, int]]:
-    """(key, title, points lost) for every finding that counts, biggest first."""
-    rows = [(f.key, f.title, PENALTY[f.impact]) for f in findings
-            if f.analyzer in SCORED and not f.key.startswith("check-")]
-    return sorted(rows, key=lambda row: (-row[2], row[0]))
-
-
-def site_score(findings: list[Finding]) -> int:
-    value = max(0, 100 - sum(points for _, _, points in breakdown(findings)))
-    return min(value, CAP) if any(f.key in CAPPED for f in findings) else value
-
-
-def score(findings: list[Finding], ai: dict | None, scanned: int) -> int | None:
-    """0 to 100. Half is the site's health, half is how often AI mentions the business.
-
-    Without an AI check the score is the site's health alone. None when nothing was read.
-    """
-    if any(f.key in NOT_READ for f in findings):
-        scanned = 0
-    if not scanned and not ai:
-        return None
-    site = site_score(findings)
-    if not ai:
-        return site
-    ai_part = round(100 * ai["mentioned"] / ai["total"])
-    return round((site + ai_part) / 2) if scanned else ai_part
-
-
-def grade(value: int | None) -> tuple[str, str]:
-    """(status, label) for a score."""
-    if value is None:
-        return "unknown", "לא נבדק"
-    if value >= 80:
-        return "good", "מצב טוב"
-    if value >= 50:
-        return "warn", "אפשר לשפר"
-    return "bad", "דורש טיפול"
 
 
 def ai_questions(result: RunResult) -> list[dict]:
@@ -91,19 +41,35 @@ def ai_questions(result: RunResult) -> list[dict]:
     return [{"question": q, "answers": rows} for q, rows in grouped.items()]
 
 
+def changes(previous: dict | None, value: int | None, findings: list[Finding]) -> dict | None:
+    """What moved since the last check of this business: the score, what was fixed, what is new.
+
+    `previous` is {"date", "score", "findings"}. Nothing is said when either check has no
+    score: a task that is missing because a scan was cut short was not fixed.
+    """
+    if previous is None or value is None or previous.get("score") is None:
+        return None
+    now = {f.key for f in findings}
+    before = {f.key for f in previous["findings"]}
+    return {
+        "date": previous["date"],
+        "before": previous["score"],
+        "after": value,
+        "delta": value - previous["score"],
+        "fixed": [f.title for f in previous["findings"] if f.key not in now],
+        "new": [f.title for f in findings if f.key not in before],
+    }
+
+
 def render_report(cfg: ClientConfig, result: RunResult, today: date | None = None,
-                  back_url: str = "", home_url: str = "") -> str:
-    pages = [f for f in result.facts if f.collector == "site-crawler" and f.kind == "page"]
-    # What was measured: pages read, a business page on a platform (its rules are always
-    # readable), or a Google profile lookup. Any of them is enough for a score.
-    scanned = sum(1 for p in pages if p.data.get("status") == 200 and p.data.get("is_html"))
-    scanned += sum(1 for f in result.facts
-                   if f.kind == "google_profile" or (f.kind == "site" and f.data.get("profile")))
-    if any(f.key in NOT_READ for f in result.findings):
-        scanned = 0
+                  back_url: str = "", home_url: str = "", previous: dict | None = None,
+                  again_url: str = "", delete_url: str = "", share_url: str = "") -> str:
+    """previous: the last check of the same business, for the "what changed" lines.
+    again_url, delete_url: where the report's two buttons post to; empty hides the button.
+    share_url: the report's plain address, shown to the owner as the one to pass on."""
+    scanned = measured(result.facts, result.findings)
     ai = summarize(cfg, result.facts)
-    cut_off = any(part in CORE_PARTS for part, _ in result.failures)
-    value = None if cut_off else score(result.findings, ai, scanned)
+    value = final_score(cfg, result.facts, result.findings, result.failures)
     status, label = grade(value)
     failures = [(PART_NAMES.get(part, part), error.removeprefix("NotConfigured: "))
                 for part, error in result.failures]
@@ -120,6 +86,11 @@ def render_report(cfg: ClientConfig, result: RunResult, today: date | None = Non
         label=label,
         ai=ai,
         lost=breakdown(result.findings) if scanned else [],
+        extent={f.key: (f.affected, f.of) for f in result.findings if f.of},
+        since=changes(previous, value, result.findings),
+        again_url=again_url,
+        delete_url=delete_url,
+        share_url=share_url,
         site_part=site_score(result.findings),
         capped=any(f.key in CAPPED for f in result.findings),
         scanned=scanned,

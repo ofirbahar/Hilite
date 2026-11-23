@@ -51,6 +51,23 @@
     <span class="verdict">{{ label }}</span>
   </section>
 
+  {% if since %}
+  <section class="since" aria-label="מאז הבדיקה הקודמת">
+    <p class="moved">
+      {% if since.delta > 0 %}<b class="up">הציון עלה ב-{{ since.delta }} נקודות</b>
+      {% elif since.delta < 0 %}<b class="down">הציון ירד ב-{{ -since.delta }} נקודות</b>
+      {% else %}<b>הציון לא השתנה</b>{% endif %}
+      <span>מאז הבדיקה הקודמת, ב-{{ since.date }}{% if since.delta %} (מ-{{ since.before }} ל-{{ since.after }}){% endif %}.</span>
+    </p>
+    {% if since.fixed %}
+    <div class="diff"><h3>תוקן</h3><ul>{% for title in since.fixed %}<li>{{ title }}</li>{% endfor %}</ul></div>
+    {% endif %}
+    {% if since.new %}
+    <div class="diff"><h3>חדש</h3><ul>{% for title in since.new %}<li>{{ title }}</li>{% endfor %}</ul></div>
+    {% endif %}
+  </section>
+  {% endif %}
+
   {% if top %}
   <section class="block">
     <h2>מה לתקן קודם</h2>
@@ -106,9 +123,9 @@
     <summary>איך חושב הציון</summary>
     <div>
       {% if scanned %}
-      <p>מתחילים מ-100. כל בעיה שנמדדה מורידה נקודות לפי החומרה שלה. משימה שמתחילה ב"לבדוק" או ב"לוודא" לא מורידה נקודות.</p>
+      <p>מתחילים מ-100. כל בעיה שנמדדה מורידה נקודות לפי החומרה שלה. בעיה שנמצאה רק בחלק מהדפים מורידה פחות, ומחצי מהדפים ומעלה היא מורידה את מלוא הנקודות. משימה שמתחילה ב"לבדוק" או ב"לוודא" לא מורידה נקודות.</p>
       <ul>
-        {% for key, title, points in lost %}<li><span>{{ title }}</span><b dir="ltr">−{{ points }}</b></li>{% endfor %}
+        {% for key, title, points in lost %}<li><span>{{ title }}{% if key in extent %} <small>{% if extent[key][1] == 1 %}בדף היחיד שנבדק{% else %}{{ extent[key][0] }} מתוך {{ extent[key][1] }} דפים{% endif %}</small>{% endif %}</span><b dir="ltr">−{{ points }}</b></li>{% endfor %}
         {% if not lost %}<li><span>לא נמצאו בעיות שמורידות נקודות</span><b>0</b></li>{% endif %}
         <li class="sum"><span>{{ 'ציון האתר' if ai else 'הציון' }}</span><b>{{ site_part }}</b></li>
       </ul>
@@ -125,6 +142,26 @@
   <p class="note">{{ part }} לא הושלמה. <bdi>{{ error }}</bdi></p>
   {% endfor %}
   <p class="note">נבדק ב-{{ today }}. לא שינינו דבר באתר.</p>
+
+  {% if again_url %}
+  <section class="after">
+    <form method="post" action="{{ again_url }}">
+      <button class="btn" type="submit">בדוק שוב</button>
+    </form>
+    <p class="note">תיקנת משהו? בדיקה חוזרת תראה מה השתנה בציון ובמשימות.</p>
+    {% if delete_url %}
+    <details class="remove">
+      <summary>מחיקת הבדיקה</summary>
+      <form method="post" action="{{ delete_url }}">
+        <p>הדוח וכל מה שנאסף בבדיקה הזו יימחקו. אי אפשר לשחזר.</p>
+        <button class="btn danger" type="submit">למחוק לצמיתות</button>
+      </form>
+    </details>
+    <p class="note">הכתובת של העמוד הזה היא הקישור האישי שלך. רק ממנה אפשר למחוק את הבדיקה, אז כדאי לשמור אותה ולא להעביר אותה הלאה.</p>
+    <p class="note share">לשיתוף הדוח, זו הכתובת לקריאה בלבד:<br><bdi>{{ share_url }}</bdi></p>
+    {% endif %}
+  </section>
+  {% endif %}
 </main>
 </body>
 </html>
