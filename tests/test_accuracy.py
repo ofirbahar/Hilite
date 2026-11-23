@@ -137,9 +137,9 @@ def test_the_report_shows_how_the_score_was_reached():
                           ai_crawlers_blocked=["GPTBot"], has_sitemap=False).values())
     rows = breakdown(findings)
     assert [(key, points) for key, _, points in rows] == [
-        ("ai-crawlers-blocked", 15), ("missing-description", 5), ("sitemap", 5), ("image-alt", 3)]
-    assert 100 - sum(points for _, _, points in rows) == score(findings, None, 1) == 72
+        ("ai-crawlers-blocked", 15), ("missing-description", 5), ("image-alt", 3)]   # no list of pages: free
+    assert 100 - sum(points for _, _, points in rows) == score(findings, None, 1) == 77
     html = render_report(CFG, RunResult(1, [site_fact(), page("/")], findings, []))
-    assert "איך חושב הציון" in html and "<b>72</b>" in html
+    assert "איך חושב הציון" in html and "<b>77</b>" in html
     for _, title, points in rows:
         assert title in html and f"−{points}" in html

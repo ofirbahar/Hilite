@@ -67,8 +67,7 @@ def test_a_readable_business_page_gets_a_full_check(cfg):
     cfg.platform, cfg.start_path = "Wolt", "/about"         # three words, no phone, no hours
     found = TechnicalSeo().analyze(cfg, SiteCrawler().collect(cfg))
     assert [f.key for f in found] == [
-        "profile-closed-to-ai", "no-own-site", "profile-thin", "check-google-profile",
-        "profile-hours", "profile-phone"]
+        "profile-closed-to-ai", "no-own-site", "check-google-profile", "check-profile-thin"]
     assert found[0].evidence == ["GPTBot"] and "Wolt" in found[0].detail
     for f in found:                                  # the same short, plain wording as every task
         assert len(f.title.split()) <= 5 and len(f.detail.split()) <= 10, f.key
@@ -102,14 +101,14 @@ def test_a_business_without_a_site_gets_a_score(cfg, tmp_path):
     cfg.platform, cfg.start_path = "Wolt", "/about"
     store = Store(tmp_path / "n.sqlite3")
     html = render_report(cfg, run(cfg, store, collectors=[SiteCrawler()]))
-    # 100 - closed to AI 15 - no site 15 - thin 9 - hours 5 - phone 5; the unchecked task is free
-    assert "<b>51</b>" in html and "מתוך 100" in html and "אפשר לשפר" in html
+    # 100 - closed to AI 15 - no site 15. What we could not read on the page is free.
+    assert "<b>70</b>" in html and "מתוך 100" in html and "אפשר לשפר" in html
 
     # with an AI check, half the score is how often the AI mentions the business
     cfg.buyer_questions = ["q1", "q2"]
     answers = {"q1": Answer("Acme is great."), "q2": Answer("Try others.")}
     ai = AiVisibility([FakeAssistant("fake-ai", answers)])
-    assert "<b>50</b>" in render_report(cfg, run(cfg, store, collectors=[SiteCrawler(), ai]))
+    assert "<b>60</b>" in render_report(cfg, run(cfg, store, collectors=[SiteCrawler(), ai]))
 
 
 def test_web_form_takes_a_platform_page(tmp_path):
@@ -211,4 +210,4 @@ def test_google_profile_runs_only_with_a_key_and_counts_in_the_score(cfg, places
                  collectors=[SiteCrawler(), GoogleProfile("k", base_url=places_api)])
     found = [f.key for f in result.findings]
     assert found[0] == "google-missing" and "check-google-profile" not in found
-    assert "<b>36</b>" in render_report(cfg, result)   # the 51 of the page, less 15 for no profile
+    assert "<b>55</b>" in render_report(cfg, result)   # the 70 of the page, less 15 for no profile

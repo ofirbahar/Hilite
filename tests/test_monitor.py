@@ -77,7 +77,7 @@ def test_analyzer_finds_the_planted_problems(findings, site):
     assert set(findings) == {
         "broken-links", "check-noindex", "check-robots-blocked", "missing-title",
         "missing-description",
-        "h1", "slow-pages", "structured-data", "image-alt", "sitemap", "ai-crawlers-blocked",
+        "slow-pages", "structured-data", "image-alt", "check-sitemap", "ai-crawlers-blocked",
     }
     assert findings["check-noindex"].evidence == [site + "/pricing"]
     assert findings["missing-title"].evidence == [site + "/about"]
@@ -143,7 +143,7 @@ def test_report_shows_one_score_and_three_tasks_first(cfg, tmp_path):
     cfg.name = "<b>Acme</b>"
     html = render_report(cfg, result, today=date(2026, 11, 23))
     assert 'dir="rtl"' in html and "23.11.2026" in html
-    assert "מתוך 100" in html and "דורש טיפול" in html
+    assert "מתוך 100" in html and "אפשר לשפר" in html
     assert "מה לתקן קודם" in html and "עוד משימות" in html
     assert "<b>Acme</b>" not in html and "&lt;b&gt;Acme&lt;/b&gt;" in html
     first_screen = html.split("<h2>פרטים</h2>")[0]

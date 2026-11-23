@@ -26,9 +26,11 @@ AI_CRAWLERS = ["GPTBot", "ClaudeBot", "PerplexityBot", "Google-Extended"]
 TIMEOUT = 15
 MAX_BYTES = 8_000_000      # never read more than this of one page; shop pages run to megabytes
 MAX_REDIRECTS = 5
-MAX_RENDERED = 12          # pages opened in a real browser per scan; each takes seconds
+MAX_RENDERED = 20          # pages opened in a real browser per scan; each takes seconds
 MAX_WAIT_SECONDS = 10      # the longest we wait when a site asks us to slow down
-SITEMAP_PATHS = ("/sitemap.xml", "/sitemap_index.xml", "/sitemap-index.xml", "/wp-sitemap.xml")
+SITEMAP_PATHS = ("/sitemap.xml", "/sitemap_index.xml", "/sitemap-index.xml", "/wp-sitemap.xml",
+                 "/sitemap.xml.gz", "/sitemaps.xml", "/sitemap/sitemap.xml", "/sitemap/",
+                 "/sitemap1.xml", "/post-sitemap.xml", "/page-sitemap.xml", "/sitemap.txt")
 TRACKING = ("utm_", "fbclid=", "gclid=")  # the same page under a different address
 
 
@@ -144,6 +146,71 @@ def _data_name(soup) -> str:
     return business or website
 
 
+BOUND_ALT = (":alt", "v-bind:alt", "[alt]", "[attr.alt]", "x-bind:alt", "ng-attr-alt", "bind:alt")
+# A page the browser was shown that is this much shorter than the one we read is not the
+# same page: it is a "prove you are human" or "access denied" screen.
+SAME_PAGE = 0.5
+RENDER_SECONDS = 45    # all the browser time one scan may spend
+
+
+ICON_PIXELS = 32
+NOT_CONTENT = re.compile(r"loader|loading|spinner|spacer|blank\.|pixel|placeholder")
+
+
+def _small(size) -> bool:
+    digits = re.match(r"\s*(\d+)", str(size or ""))
+    return bool(digits) and int(digits.group(1)) <= ICON_PIXELS
+
+
+def _needs_description(img) -> bool:
+    """A picture a visitor sees and that has no description. Pictures nobody sees (a
+    tracking dot, a fallback inside <noscript>, a hidden or purely decorative image) are
+    correct without one."""
+    if img.get("alt") is not None or img.has_attr("hidden"):
+        return False
+    if any((img.get(name) or "").strip() for name in ("aria-label", "aria-labelledby", "title")):
+        return False                    # described another way
+    # A picture in a page template gets its description, and its file, when the page's
+    # script fills it in: <img :alt="product.title" :src="product.image">.
+    if any(img.has_attr(name) for name in BOUND_ALT):
+        return False
+    if not any(img.get(name) for name in ("src", "srcset", "data-src", "data-srcset", "data-lazy-src")):
+        return False
+    if img.find_parent(["noscript", "template"]) is not None:
+        return False
+    if (img.get("aria-hidden") or "").lower() == "true":
+        return False
+    if (img.get("role") or "").lower() in ("presentation", "none"):
+        return False
+    # A search-box magnifier or a menu arrow is part of the page's controls, not a picture
+    # of the business, and a loading ring is not content.
+    if _small(img.get("width")) or _small(img.get("height")):
+        return False
+    source = " ".join(str(img.get(name) or "") for name in ("src", "data-src", "class")).lower()
+    if NOT_CONTENT.search(source):
+        return False
+    for node in (img, *img.parents):           # hidden itself, or inside something hidden
+        style = (node.get("style") or "").replace(" ", "").lower()
+        if ("display:none" in style or "visibility:hidden" in style or node.has_attr("hidden")
+                or (node.get("aria-hidden") or "").lower() == "true"):
+            return False
+    return True
+
+
+def _has_business_details(soup) -> bool:
+    """Details for search engines, in any of the three formats they read: JSON-LD,
+    microdata and RDFa."""
+    if soup.find("script", type="application/ld+json"):
+        return True
+    if soup.find(attrs={"itemscope": True, "itemtype": lambda v: v and "schema.org" in v}):
+        return True
+    typed = soup.find(attrs={"typeof": True})
+    if typed is None:
+        return False
+    return (bool(soup.find(attrs={"vocab": lambda v: v and "schema.org" in v}))
+            or typed["typeof"].startswith("schema:"))
+
+
 def _meta(soup, prop: str) -> str:
     tag = soup.find("meta", attrs={"property": prop})
     return (tag.get("content") or "").strip() if tag else ""
@@ -187,11 +254,11 @@ def parse_page(url: str, html: str | bytes, charset: str | None = None) -> dict:
         "canonical": (canonical.get("href") or "").strip() if canonical else "",
         "meta_robots": (robots.get("content") or "").lower() if robots else "",
         "lang": (soup.html.get("lang") or "") if soup.html else "",
-        "has_structured_data": bool(soup.find("script", type="application/ld+json")),
+        "has_structured_data": _has_business_details(soup),
         "scripts": len(soup.find_all("script")),
         "images": len(images),
         # alt="" is the correct way to mark a decorative picture; only a missing alt is a gap.
-        "images_missing_alt": sum(1 for i in images if i.get("alt") is None),
+        "images_missing_alt": sum(1 for i in images if _needs_description(i)),
         "word_count": len(body_text.split()),
         "links": sorted(set(links)),
     }
@@ -211,11 +278,13 @@ class SiteCrawler:
         self.render = render
         self._browser = None
         self._rendered = 0
+        self._render_seconds = 0.0
         self._rules_by_origin: dict[str, Rules | None] = {}
 
     def _render(self, url: str) -> str | None:
         """The page after its scripts ran, or None when no browser can be used."""
-        if not self.render or self._rendered >= MAX_RENDERED or not render.available():
+        if (not self.render or self._rendered >= MAX_RENDERED or not render.available()
+                or self._render_seconds >= RENDER_SECONDS):
             return None
         if self._browser is None:
             try:
@@ -224,7 +293,61 @@ class SiteCrawler:
                 self.render = False
                 return None
         self._rendered += 1
-        return self._browser.html(url)
+        started = time.monotonic()
+        try:
+            return self._browser.html(url)
+        finally:
+            self._render_seconds += time.monotonic() - started
+
+    def _confirm(self, url: str, data: dict) -> None:
+        """Look at the page in a real browser before anything on it is called missing.
+
+        Many sites add their description, main heading or business details with scripts.
+        Google runs those scripts, so what counts is the page after they ran. When a
+        browser exists but this page could not be opened in it, the page is marked
+        unverified and its gaps are not reported: a guess is worse than silence.
+        """
+        html = self._render(url)
+        if html is None:
+            if self.render and render.available():
+                data["unverified"] = True
+            return
+        seen = parse_page(url, html)
+        if seen["word_count"] < data.get("word_count", 0) * SAME_PAGE:
+            data["unverified"] = True       # the browser was turned away; this is not the page
+            return
+        for key in ("description", "h1", "site_name", "og_title", "data_name"):
+            if not data.get(key) and seen.get(key):
+                data[key] = seen[key]
+        data["title"] = seen["title"] or data.get("title", "")
+        data["has_structured_data"] = data.get("has_structured_data") or seen["has_structured_data"]
+        data["images"], data["images_missing_alt"] = seen["images"], seen["images_missing_alt"]
+        data["checked_in_browser"] = True
+
+    def _confirm_titles(self, facts: list[Fact]) -> None:
+        """Two pages that share a title as they arrive may get their own once scripts run."""
+        by_title: dict[str, list[Fact]] = {}
+        for fact in facts:
+            if fact.kind == "page" and fact.data.get("status") == 200 and fact.data.get("title"):
+                by_title.setdefault(fact.data["title"], []).append(fact)
+        for same in by_title.values():
+            if len(same) < 2:
+                continue
+            for fact in same:
+                data = fact.data
+                if not data.get("scripts") or data.get("checked_in_browser") or data.get("rendered"):
+                    continue
+                html = self._render(data.get("final_url") or fact.subject)
+                if html is None:
+                    if self.render and render.available():
+                        data["title_unverified"] = True
+                    continue
+                seen = parse_page(fact.subject, html)
+                if seen["word_count"] < data.get("word_count", 0) * SAME_PAGE:
+                    data["title_unverified"] = True
+                    continue
+                data["title"] = seen["title"] or data["title"]
+                data["checked_in_browser"] = True
 
     def _close_browser(self) -> None:
         if self._browser is not None:
@@ -368,6 +491,7 @@ class SiteCrawler:
 
     def _collect(self, cfg: ClientConfig) -> list[Fact]:
         self._rendered = 0
+        self._render_seconds = 0.0
         self._rules_by_origin = {}
         if cfg.platform:
             return self._collect_profile(cfg)
@@ -400,6 +524,7 @@ class SiteCrawler:
             site_fact, rules = self._site_facts(site)
         if https_broken:
             site_fact.data["https_broken"] = True
+        confirmed_details = 0          # pages whose lack of business details was confirmed
         facts = [site_fact, *moved]
         read = 0                       # pages actually fetched; redirects and skips are free
         queue = deque([start])
@@ -424,6 +549,13 @@ class SiteCrawler:
                 response, elapsed, error = landing        # already fetched above
             else:
                 response, elapsed, error = self._get(url)
+            if (response is not None and not response.redirected_to
+                    and elapsed > cfg.slow_page_seconds):
+                # One slow answer can be the network or a cold cache. Ask once more and
+                # keep the faster of the two, so only a page that is slow twice is slow.
+                again = self._get(url)
+                if again[0] is not None:
+                    elapsed = min(elapsed, again[1])
             data: dict = {
                 "linked_from": linked_from[url],
                 "seconds": round(elapsed, 3),
@@ -459,10 +591,28 @@ class SiteCrawler:
                         if is_shell(in_browser):
                             # Just as small in a real browser: a short page, not a hidden one.
                             data["small_page"] = True
+                if read == 1 and "noindex" in data.get("meta_robots", ""):
+                    # "Hidden from Google" on the home page is the gravest thing the report
+                    # can say. Some sites send that mark only now and then, or only to
+                    # readers that are not Google. It is said only if every answer has it.
+                    for _ in range(2):
+                        again = self._get(url)[0]
+                        if (again is not None and again.status == 200 and "noindex" not in
+                                parse_page(again.url, again.body, again.charset)["meta_robots"]):
+                            data["noindex_unsure"] = True
+                            break
+                if data.get("empty_without_browser"):
+                    pass                                       # already opened in a browser
+                elif data["scripts"]:
+                    no_details = not data["has_structured_data"] and confirmed_details < 3
+                    if not (data["title"] and data["description"] and data["h1"]) or no_details:
+                        confirmed_details += no_details
+                        self._confirm(response.url, data)
                 for link in data["links"]:
                     enqueue(link, url)
             facts.append(Fact(NAME, "page", url, data))
             if cfg.delay_seconds:
                 time.sleep(cfg.delay_seconds)
 
+        self._confirm_titles(facts)
         return facts

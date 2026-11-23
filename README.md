@@ -98,6 +98,28 @@ The report shows this under "איך חושב הציון", so the number can alwa
   only in the city the owner gave. On a platform the whole address must match, including
   what follows the question mark.
 
+## Nothing is called missing unless it is
+
+Every claim was compared with what a real browser shows on twenty live sites, and each
+kind of false claim found is now a test in `tests/test_truth.py`.
+
+- **Checked in a browser first.** Before a page is said to lack a title, a description, a
+  main heading or business details, it is opened in a real browser, because many sites add
+  these with scripts and Google runs scripts. When the browser is turned away (an "access
+  denied" screen) or its time for the scan is used up, the page is left out, not guessed at.
+- **Pictures.** Only a picture a visitor sees counts: not a tracking dot, a `<noscript>`
+  fallback, a hidden or decorative image, an interface icon, a loading ring, or a template
+  picture whose description a script fills in.
+- **Business details** are recognised as JSON-LD, microdata and RDFa.
+- **Headings.** Only a page with no main heading is reported. Several are fine.
+- **One page under two addresses** is counted once.
+- **A slow page** is one that was slow twice.
+- **"Hidden from Google" on the home page** is said only when every answer carries the mark.
+- **Not found is not missing.** A list of pages can be given to Google directly, and a
+  platform page shows visitors details it does not hand to a reader like ours. These are
+  listed as things to check (`check-...`) and cost no points. Nothing at all is said about
+  the content of a Google Maps page.
+
 ## One field
 
 The form asks for one thing: the address of the site or of the business's page. The

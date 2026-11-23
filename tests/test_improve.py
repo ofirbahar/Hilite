@@ -110,7 +110,7 @@ def test_a_finding_knows_how_much_of_the_site_it_touches():
     assert (one.affected, one.of) == (1, 20)
     most = found(page("/"), *[page(f"/p{n}", description="") for n in range(19)])
     assert (most["missing-description"].affected, most["missing-description"].of) == (19, 20)
-    assert found(page("/"), has_sitemap=False)["sitemap"].of == 0      # the whole site
+    assert found(page("/"), ai_crawlers_blocked=["GPTBot"])["ai-crawlers-blocked"].of == 0   # whole site
 
 
 def test_points_grow_with_the_share_of_pages_and_stop_at_half():
@@ -203,7 +203,7 @@ def start(client) -> str:
 def test_the_score_is_saved_with_the_check(app_client, tmp_path):
     start(app_client)
     run = Store(tmp_path / "w.sqlite3").get_run(1)
-    assert run["score"] == 90 and run["scoring"] >= 2
+    assert run["score"] == 95 and run["scoring"] >= 2
 
 
 def test_a_first_check_has_nothing_to_compare_to(app_client):
@@ -219,9 +219,9 @@ def test_checking_again_scans_the_same_business_and_shows_what_changed(app_clien
     assert again.headers["Location"] != first
     html = app_client.get(again.headers["Location"]).get_data(as_text=True)
     assert "מאז הבדיקה הקודמת" in html
-    assert "עלה ב-7 נקודות" in html and "מ-90 ל-97" in html
+    assert "עלה ב-2 נקודות" in html and "מ-95 ל-97" in html
     since = html.split('class="since"')[1].split("</section>")[0]
-    assert "להוסיף תיאורים לדפים" in since and "לשלוח לגוגל רשימת דפים" in since   # fixed
+    assert "להוסיף תיאורים לדפים" in since and "לוודא שגוגל קיבל רשימת דפים" in since   # fixed
     assert "להוסיף תיאור לתמונות" in since                                         # new
     assert since.index("תוקן") < since.index("להוסיף תיאורים לדפים") < since.index("חדש")
 
@@ -236,7 +236,7 @@ def test_a_lower_score_and_an_unchanged_score_are_said_plainly(app_client):
     Site.pages = [page("/", description="", title="")]
     app_client.post("/runs/2/again")
     html = app_client.get("/runs/3").get_data(as_text=True)
-    assert "ירד ב-9 נקודות" in html and "מ-90 ל-81" in html
+    assert "ירד ב-9 נקודות" in html and "מ-95 ל-86" in html
 
 
 def test_another_business_is_not_compared(app_client):

@@ -125,18 +125,27 @@ def _business_page(site: Fact, pages: list[Fact], google_checked: bool) -> list[
                 add("profile-hidden", "להפוך את הדף לציבורי", "הדף מסומן כמוסתר ממנועי חיפוש.",
                     "לבדוק בהגדרות הדף שהוא פתוח לכולם.", [page.subject], 5, 2, OWNER,
                     "תג noindex בדף העסק")
-            if page.data.get("word_count", 0) < THIN_PAGE_WORDS:
-                add("profile-thin", "להוסיף פרטים לדף העסק", "בדף יש מעט מאוד מידע על העסק.",
-                    "להוסיף תיאור, כתובת, שעות, טלפון ותפריט.", [page.subject], 4, 2, OWNER,
-                    f"{page.data.get('word_count', 0)} מילים בדף")
-            if not page.data.get("has_hours"):
-                add("profile-hours", "להוסיף שעות פתיחה לדף", "לא מצאנו בדף שעות פתיחה.",
-                    "לכתוב את שעות הפתיחה בפרטי הדף.", [page.subject], 3, 1, OWNER,
-                    "לא נמצאה שעה בטקסט הדף")
-            if not page.data.get("has_phone"):
-                add("profile-phone", "להוסיף טלפון לדף העסק", "לא מצאנו בדף מספר טלפון.",
-                    "להוסיף מספר טלפון בפרטי הדף.", [page.subject], 3, 1, OWNER,
-                    "לא נמצא מספר טלפון או קישור חיוג")
+            # What a platform shows a visitor and what it hands a reader like ours are
+            # two things: details sit behind a button, a sign-in or a script. So what we
+            # did not find is never said to be missing. It is listed to be looked at, and
+            # costs no points. A Google Maps page hands a reader nothing at all, so
+            # nothing is said about it.
+            thin = page.data.get("word_count", 0) < THIN_PAGE_WORDS
+            if platform == "גוגל מפות":
+                pass
+            elif thin:
+                add("check-profile-thin", "לבדוק את פרטי הדף", "הצלחנו לקרוא רק מעט מהדף.",
+                    "לוודא שיש בו תיאור, כתובת, שעות וטלפון.", [page.subject], 3, 1, OWNER,
+                    f"{page.data.get('word_count', 0)} מילים נקראו (לא נכלל בציון)")
+            else:
+                if not page.data.get("has_hours"):
+                    add("check-profile-hours", "לוודא שיש שעות פתיחה", "לא מצאנו בדף שעות פתיחה.",
+                        "אם הן מופיעות בדף, אין מה לתקן.", [page.subject], 2, 1, OWNER,
+                        "לא נמצאה שעה בטקסט הדף (לא נכלל בציון)")
+                if not page.data.get("has_phone"):
+                    add("check-profile-phone", "לוודא שיש טלפון בדף", "לא מצאנו בדף מספר טלפון.",
+                        "אם הוא מופיע בדף, אין מה לתקן.", [page.subject], 2, 1, OWNER,
+                        "לא נמצא מספר טלפון או קישור חיוג (לא נכלל בציון)")
     add("no-own-site", "לפתוח לעסק אתר משלו", f"לעסק יש רק דף {at}. למנועי AI זה מעט מדי.",
         "להקים אתר קטן עם תפריט, כתובת, שעות ומחירים.", [], 5, 4, "בונה אתרים",
         "אין דומיין ואתר בבעלות העסק")
@@ -209,7 +218,7 @@ class TechnicalSeo:
         # (a cart, a login, search results), so they are listed to be looked at and cost
         # no points: their keys start with "check-".
         hidden = [p for p in readable if _noindex(p)]
-        hidden_home = [p for p in hidden if p is home]
+        hidden_home = [p for p in hidden if p is home and not p.data.get("noindex_unsure")]
         add("noindex", "לחשוף את דף הבית", "דף הבית מוסתר מגוגל.",
             "לבטל את ההסתרה בהגדרות האתר.",
             [p.subject for p in hidden_home], 5, 1, BUILDER, "תג noindex בדף הבית")
@@ -231,13 +240,22 @@ class TechnicalSeo:
             [p.subject for p in closed], 2, 1, BUILDER,
             "חסימה לגוגל בקובץ robots.txt (לא נכלל בציון)")
 
-        no_title = [p for p in indexable if not p.data.get("title")]
+        # One page reached under two addresses (with and without a closing slash, or with
+        # a tracking tail) is one page, and is counted once.
+        seen_pages: set[str] = set()
+        indexable = [p for p in indexable
+                     if _identity(p) not in seen_pages and not seen_pages.add(_identity(p))]
+        # A gap is reported only where we are sure of it. A page a browser could not
+        # confirm (see SiteCrawler._confirm) is left out instead of guessed at.
+        sure = [p for p in indexable if not p.data.get("unverified")]
+
+        no_title = [p for p in sure if not p.data.get("title")]
         add("missing-title", "להוסיף כותרות לדפים",
             _count(len(no_title), "דף אחד מופיע", "דפים מופיעים") + " בגוגל בלי כותרת.",
             "לכתוב לכל דף כותרת קצרה.",
             [p.subject for p in no_title], 4, 1, WRITER, "תג title חסר", among=indexable, hit=no_title)
 
-        no_desc = [p for p in indexable if not p.data.get("description")]
+        no_desc = [p for p in sure if not p.data.get("description")]
         add("missing-description", "להוסיף תיאורים לדפים",
             _count(len(no_desc), "דף אחד מופיע", "דפים מופיעים") + " בגוגל בלי תיאור.",
             "לכתוב לכל דף משפט שמסביר מה יש בו.",
@@ -246,8 +264,8 @@ class TechnicalSeo:
         # Two addresses that name the same real page (a list and the same list sorted)
         # are one page, so they are not "two pages with one title".
         by_title: dict[str, set[str]] = defaultdict(set)
-        for p in indexable:
-            if p.data.get("title"):
+        for p in sure:
+            if p.data.get("title") and not p.data.get("title_unverified"):
                 by_title[p.data["title"]].add(_identity(p))
         duplicates = [f'"{t}": {", ".join(sorted(urls))}'
                       for t, urls in by_title.items() if len(urls) > 1]
@@ -257,13 +275,13 @@ class TechnicalSeo:
             duplicates, 3, 2, WRITER, "תגי title כפולים", among=indexable,
             hit=[p for p in indexable if len(by_title.get(p.data.get("title"), ())) > 1])
 
-        bad_h1 = [p for p in indexable if len(p.data.get("h1", [])) != 1]
-        h1_issues = [f"{p.subject} ({len(p.data.get('h1', []))} כותרות ראשיות)" for p in bad_h1]
-        add("h1", "לסדר כותרות ראשיות",
-            ("בדף אחד" if len(h1_issues) == 1 else f"ב-{len(h1_issues)} דפים")
-            + " אין כותרת ראשית אחת.",
-            "להשאיר כותרת ראשית אחת בכל דף.",
-            h1_issues, 2, 2, BUILDER, "תג H1 חסר או כפול", among=indexable, hit=bad_h1)
+        # Only a page with no main heading at all. Several of them on one page is a common
+        # and accepted way to build a page, and search engines read it without trouble.
+        bad_h1 = [p for p in sure if not p.data.get("h1")]
+        add("h1", "להוסיף כותרת ראשית",
+            ("בדף אחד" if len(bad_h1) == 1 else f"ב-{len(bad_h1)} דפים") + " אין כותרת ראשית.",
+            "להוסיף כותרת ראשית אחת לכל דף.",
+            [p.subject for p in bad_h1], 2, 2, BUILDER, "תג H1 חסר", among=indexable, hit=bad_h1)
 
         slow_pages = [p for p in readable if p.data.get("seconds", 0) > cfg.slow_page_seconds]
         slow = [f"{p.subject} ({p.data.get('seconds')} שניות)" for p in slow_pages]
@@ -288,10 +306,12 @@ class TechnicalSeo:
 
         if site is not None:
             if not site.data.get("has_sitemap"):
-                add("sitemap", "לשלוח לגוגל רשימת דפים",
-                    "לא מצאנו באתר רשימת דפים למנועי חיפוש.",
-                    "לייצר את הרשימה ולהגיש אותה לגוגל.",
-                    None, 3, 1, BUILDER, "קובץ sitemap.xml חסר")
+                # A list can sit at any address and be handed to Google directly, where
+                # nobody else sees it. Not finding one proves nothing, so it costs nothing.
+                add("check-sitemap", "לוודא שגוגל קיבל רשימת דפים",
+                    "לא מצאנו רשימת דפים בכתובות המקובלות באתר.",
+                    "אם הוגשה ב-Search Console, אין מה לתקן. אחרת להגיש.",
+                    None, 2, 1, BUILDER, "sitemap.xml לא נמצא (לא נכלל בציון)")
             if site.data.get("https_broken"):
                 add("https-broken", "לתקן את תעודת האבטחה",
                     "הכתובת המאובטחת של האתר (https) לא נפתחת. דפדפנים מציגים שם אזהרה.",
