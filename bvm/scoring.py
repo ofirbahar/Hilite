@@ -11,7 +11,7 @@ from .models import Fact, Finding
 
 # Raised whenever the formula changes. Two checks are compared only when they were scored
 # the same way, so a change here is never shown to an owner as their own progress.
-SCORING = 2
+SCORING = 3
 # How many points one site problem costs at most, by its impact (5 = critical).
 PENALTY = {5: 15, 4: 9, 3: 5, 2: 3, 1: 1}
 # A problem on a single page costs this share of the full points. The cost grows with the
