@@ -292,6 +292,11 @@ class TechnicalSeo:
                     "לא מצאנו באתר רשימת דפים למנועי חיפוש.",
                     "לייצר את הרשימה ולהגיש אותה לגוגל.",
                     None, 3, 1, BUILDER, "קובץ sitemap.xml חסר")
+            if site.data.get("https_broken"):
+                add("https-broken", "לתקן את תעודת האבטחה",
+                    "הכתובת המאובטחת של האתר (https) לא נפתחת. דפדפנים מציגים שם אזהרה.",
+                    "לחדש או להתקין תעודת SSL אצל חברת האחסון.",
+                    None, 5, 2, BUILDER, "שגיאת SSL בכתובת https; הסריקה נעשתה ב-http")
             blocked_bots = site.data.get("ai_crawlers_blocked") or []
             add("ai-crawlers-blocked", "להסיר חסימת AI",
                 "האתר חוסם את מנועי ה-AI.",

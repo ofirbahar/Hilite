@@ -99,6 +99,11 @@ class Store:
         self.db.commit()
         return cur.lastrowid
 
+    def update_config(self, run_id: int, config: dict) -> None:
+        self.db.execute("UPDATE runs SET config = ? WHERE id = ?",
+                        (json.dumps(config, ensure_ascii=False), run_id))
+        self.db.commit()
+
     def finish_run(self, run_id: int, status: str = "done", score: int | None = None,
                    scoring: int | None = None) -> None:
         self.db.execute(

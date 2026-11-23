@@ -31,6 +31,7 @@ class ClientConfig:
     max_pages: int = 50
     delay_seconds: float = 0.5
     slow_page_seconds: float = 2.0
+    name_guessed: bool = False  # the name was read from the page, not typed by the owner
 
     def to_dict(self) -> dict:
         return asdict(self)

@@ -4,7 +4,7 @@
 <main class="page" id="main">
   <div class="hello">
     <h1>בדיקת העסק</h1>
-    <p>שם העסק וכתובת. זה הכול.</p>
+    <p>כתובת אחת. זה הכול.</p>
   </div>
 
   {% if deleted %}<p class="done" role="status">הבדיקה נמחקה.</p>
@@ -14,27 +14,29 @@
   <form method="post" action="{{ url_for('scan') }}">
     {% if error %}<div class="alert" role="alert">{{ error }}</div>{% endif %}
     <div class="field">
-      <label for="name">שם העסק</label>
-      <input id="name" name="name" required autocomplete="organization" value="{{ form.get('name', '') }}">
-    </div>
-    <div class="field">
       <label for="site">כתובת האתר או דף העסק</label>
       <input id="site" name="site" type="text" dir="ltr" required inputmode="url" autocapitalize="off"
              autocomplete="url" spellcheck="false" placeholder="www.example.co.il" value="{{ form.get('site', '') }}">
     </div>
     <p class="hint">אין אתר? אפשר להזין דף פייסבוק, אינסטגרם, Wolt או גוגל מפות.</p>
-    <div class="field">
-      <label for="city">עיר (לא חובה)</label>
-      <input id="city" name="city" autocomplete="address-level2" value="{{ form.get('city', '') }}">
-    </div>
-    <details class="extra"{% if form.get('competitors') or form.get('questions') %} open{% endif %}>
-      <summary>להשוות למתחרים ב-AI</summary>
+    <details class="extra"{% if form.get('name') or form.get('city') or form.get('competitors') or form.get('questions') %} open{% endif %}>
+      <summary>עוד אפשרויות (לא חובה)</summary>
       <div class="field">
-        <label for="competitors">מתחרים, עם פסיק ביניהם</label>
+        <label for="name">שם העסק</label>
+        <input id="name" name="name" autocomplete="organization" maxlength="80" value="{{ form.get('name', '') }}">
+        <p class="hint">בלי שם, נזהה אותו מהדף.</p>
+      </div>
+      <div class="field">
+        <label for="city">עיר</label>
+        <input id="city" name="city" autocomplete="address-level2" value="{{ form.get('city', '') }}">
+        <p class="hint">עוזרת למצוא את העסק הנכון בגוגל מפות.</p>
+      </div>
+      <div class="field">
+        <label for="competitors">מתחרים להשוואה ב-AI, עם פסיק ביניהם</label>
         <input id="competitors" name="competitors" value="{{ form.get('competitors', '') }}">
       </div>
       <div class="field">
-        <label for="questions">שאלות של לקוחות, אחת בכל שורה</label>
+        <label for="questions">שאלות של לקוחות ל-AI, אחת בכל שורה</label>
         <textarea id="questions" name="questions" rows="3"
                   placeholder="מה המסעדה הכי טובה באזור?">{{ form.get('questions', '') }}</textarea>
       </div>

@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>הדוח של {{ client.name }}</title>
+{% set shown_name = client.name or (client.site|replace('https://', '')|replace('http://', '')) %}
+<title>הדוח של {{ shown_name }}</title>
 {% include "_style.html" %}
 </head>
 <body>
@@ -39,8 +40,9 @@
 
 <main class="page" id="main">
   <section class="score {{ status }}">
-    <span class="who">{{ client.name }}</span>
+    <span class="who">{{ shown_name }}</span>
     <span class="site"><bdi>{{ client.site }}{{ client.start_path if client.start_path != '/' else '' }}</bdi></span>
+    {% if client.name_guessed %}<span class="site guessed">השם זוהה מהדף. לא מדויק? אפשר לכתוב אותו בבדיקה חדשה, תחת "עוד אפשרויות".</span>{% endif %}
     <div class="ring" role="img" aria-label="ציון {{ score if score is not none else 'לא זמין' }} מתוך 100">
       <svg viewBox="0 0 120 120" aria-hidden="true">
         <circle class="track" cx="60" cy="60" r="54"/>
@@ -87,7 +89,7 @@
           <span class="count">{{ ai.mentioned }} מתוך {{ ai.total }}</span>{{ chevron|safe }}</summary>
         <div class="inside">
           <ul class="bars">
-            <li class="you"><span>{{ client.name }}</span><b>{{ ai.mentioned }} מתוך {{ ai.total }}</b>
+            <li class="you"><span>{{ shown_name }}</span><b>{{ ai.mentioned }} מתוך {{ ai.total }}</b>
               <div class="line"><i style="width: {{ (100 * ai.mentioned / ai.total)|round|int }}%"></i></div></li>
             {% for name, count in ai.competitors %}
             <li><span>{{ name }}</span><b>{{ count }} מתוך {{ ai.total }}</b>

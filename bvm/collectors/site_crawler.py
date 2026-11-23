@@ -5,6 +5,7 @@ and brings back raw facts only. Deciding what matters is the analyzers' job.
 """
 from __future__ import annotations
 
+import json
 import re
 import time
 from collections import deque
@@ -106,6 +107,48 @@ def _text(node) -> str:
     return node.get_text(" ", strip=True) if node else ""
 
 
+# Structured data about these is about a page or a thing on it, not about the business.
+NOT_A_BUSINESS = {"WebPage", "BreadcrumbList", "ListItem", "ImageObject", "SearchAction",
+                  "Article", "BlogPosting", "NewsArticle", "Product", "Person", "FAQPage",
+                  "Question", "Answer", "VideoObject", "Offer", "CollectionPage", "ItemList",
+                  "SiteNavigationElement", "WPHeader", "WPFooter", "PostalAddress", "Review"}
+
+
+def _data_name(soup) -> str:
+    """The business's name from the details the page publishes for search engines."""
+    business, website = "", ""
+
+    def walk(node) -> None:
+        nonlocal business, website
+        if isinstance(node, list):
+            for item in node:
+                walk(item)
+        elif isinstance(node, dict):
+            kinds = node.get("@type") or []
+            kinds = {kinds} if isinstance(kinds, str) else {k for k in kinds if isinstance(k, str)}
+            name = node.get("name")
+            if kinds and isinstance(name, str) and name.strip():
+                if kinds == {"WebSite"}:
+                    website = website or name.strip()
+                elif not kinds & NOT_A_BUSINESS:
+                    business = business or name.strip()
+            for value in node.values():
+                if isinstance(value, (dict, list)):
+                    walk(value)
+
+    for script in soup.find_all("script", type="application/ld+json"):
+        try:
+            walk(json.loads(script.string or ""))
+        except (ValueError, RecursionError):
+            continue                    # one broken block must not hide the others
+    return business or website
+
+
+def _meta(soup, prop: str) -> str:
+    tag = soup.find("meta", attrs={"property": prop})
+    return (tag.get("content") or "").strip() if tag else ""
+
+
 def parse_page(url: str, html: str | bytes, charset: str | None = None) -> dict:
     """Pull the facts an editor would want out of one HTML page.
 
@@ -137,6 +180,10 @@ def parse_page(url: str, html: str | bytes, charset: str | None = None) -> dict:
         "title": _text(soup.head.find("title")) if soup.head else "",
         "description": (description.get("content") or "").strip() if description else "",
         "h1": [_text(h) for h in soup.find_all("h1")],
+        # What the page calls itself, for naming the business when the owner did not.
+        "site_name": _meta(soup, "og:site_name"),
+        "og_title": _meta(soup, "og:title"),
+        "data_name": _data_name(soup),
         "canonical": (canonical.get("href") or "").strip() if canonical else "",
         "meta_robots": (robots.get("content") or "").lower() if robots else "",
         "lang": (soup.html.get("lang") or "") if soup.html else "",
@@ -331,6 +378,19 @@ class SiteCrawler:
         # (example.com -> shop.example.com) is scanned there; anything else is not followed.
         site_fact, rules = self._site_facts(site)      # the site's rules come first
         landing = self._get(start) if not rules or rules.can_fetch(USER_AGENT, start) else None
+        https_broken = False
+        if (landing and landing[0] is None and landing[2] == "SSLError"
+                and site.startswith("https://")):
+            # The secure address does not hold (an expired or wrong certificate). Visitors
+            # get a browser warning there. Many such sites still open without the lock, so
+            # the check goes on at the plain address and the report names the broken lock.
+            plain_site, plain_start = "http://" + site[8:], "http://" + start[8:]
+            plain_fact, plain_rules = self._site_facts(plain_site)
+            plain = (self._get(plain_start)
+                     if not plain_rules or plain_rules.can_fetch(USER_AGENT, plain_start) else None)
+            if plain and plain[0] is not None and not plain[0].redirected_to.startswith("https://"):
+                site, start, landing = plain_site, plain_start, plain
+                site_fact, rules, https_broken = plain_fact, plain_rules, True
         target = landing[0].redirected_to if landing and landing[0] is not None else ""
         if target and not _same_host(target, site) and _related(target, site):
             moved.append(Fact(NAME, "page", start, {
@@ -338,6 +398,8 @@ class SiteCrawler:
             parsed = urlparse(target)
             site, start, landing = f"{parsed.scheme}://{parsed.netloc}", _clean(target), None
             site_fact, rules = self._site_facts(site)
+        if https_broken:
+            site_fact.data["https_broken"] = True
         facts = [site_fact, *moved]
         read = 0                       # pages actually fetched; redirects and skips are free
         queue = deque([start])

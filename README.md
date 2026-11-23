@@ -98,6 +98,19 @@ The report shows this under "איך חושב הציון", so the number can alwa
   only in the city the owner gave. On a platform the whole address must match, including
   what follows the question mark.
 
+## One field
+
+The form asks for one thing: the address of the site or of the business's page. The
+business's name is read from the page: the name the site gives itself (`og:site_name`),
+then the business details it publishes for search engines (JSON-LD), then the part of the
+page title that is a name, and last the address. A page on a platform is named by its own
+title without the platform's name, or by its address when it cannot be read. The report
+says when the name was found this way. Name, city, competitors and questions for AI are
+optional and folded under "עוד אפשרויות".
+
+A site whose secure address (https) is broken but that opens without the lock is still
+checked, at the plain address, and the report's first tasks include fixing the certificate.
+
 ## Checking again, deleting, and the contact address
 
 - **Check again.** Every report has a "בדוק שוב" button that scans the same business with

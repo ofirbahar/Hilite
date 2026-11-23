@@ -213,7 +213,6 @@ def test_web_scan_shows_the_report_and_lists_it(site, tmp_path):
 def test_web_rejects_bad_input_and_addresses_inside_the_network(tmp_path):
     client = make_app(tmp_path, allow_private=False)
     for data in ({"name": "Acme", "site": "not-a-url"},
-                 {"name": "", "site": "https://example.com"},
                  {"name": "Acme", "site": "http://127.0.0.1:8080"},
                  {"name": "Acme", "site": "http://localhost"}):
         response = client.post("/scan", data=data)

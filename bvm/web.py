@@ -140,15 +140,13 @@ def create_app(db_path: str = "bvm.sqlite3", allow_private: bool = False,
     def scan():
         own_form_only()
         form = request.form
-        name = form.get("name", "").strip()
+        name = form.get("name", "").strip()[:80]      # optional: read from the page if empty
         error = ""
         site, start_path = "", "/"
         try:
             site, start_path = split_site_address(form.get("site", ""))
         except ConfigError:
             error = "זו לא כתובת של אתר. כותבים אותה כך: www.example.co.il"
-        if not error and not name:
-            error = "חסר שם העסק"
         if not error and not allow_private and not exists(site):
             error = "לא מצאנו אתר בכתובת הזו. כדאי לבדוק שאין בה שגיאת הקלדה."
         if not error and not allow_private and not is_public_address(site):

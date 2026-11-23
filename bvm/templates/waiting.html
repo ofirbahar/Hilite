@@ -1,10 +1,12 @@
 {% extends "base.html" %}
 {% block head %}<noscript><meta http-equiv="refresh" content="3"></noscript>{% endblock %}
-{% block title %}בודקים את {{ run.config.get('name') }}{% endblock %}
+{% set who = run.config.get('name') %}
+{% set address = (run.config.get('site', '')|replace('https://', '')|replace('http://', '')) ~ (run.config.get('start_path', '/') if run.config.get('start_path', '/') != '/' else '') %}
+{% block title %}בודקים את {{ who or address }}{% endblock %}
 {% block body %}
 {% set asks_ai = run.config.get('buyer_questions') %}
 <main class="page waiting" id="main" data-waiting>
-  <h1>בודקים את {{ run.config.get('name') }}</h1>
+  <h1>בודקים את {% if who %}{{ who }}{% else %}<bdi>{{ address }}</bdi>{% endif %}</h1>
   <div class="scan" role="progressbar" aria-label="הבדיקה רצה"></div>
   <ul class="doing{{ '' if asks_ai else ' two' }}" aria-hidden="true">
     <li style="--i: 0">קוראים את האתר</li>

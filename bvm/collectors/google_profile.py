@@ -105,6 +105,8 @@ class GoogleProfile:
         self.key, self.base_url = key, base_url.rstrip("/")
 
     def collect(self, cfg: ClientConfig) -> list[Fact]:
+        if not cfg.name.strip():
+            return []                   # nothing to look up; an empty search finds strangers
         response = requests.post(
             f"{self.base_url}/v1/places:searchText",
             headers={"X-Goog-Api-Key": self.key, "X-Goog-FieldMask": FIELDS,

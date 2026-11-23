@@ -17,6 +17,7 @@ from .collectors.google_profile import profile_from_env
 from .collectors.site_crawler import SiteCrawler
 from .config import ClientConfig
 from .models import Fact, Finding
+from .naming import business_name
 from .scoring import SCORING, final_score
 from .store import Store
 
@@ -91,6 +92,12 @@ def run(cfg: ClientConfig, store: Store, collectors=None, analyzers=None,
             store.save_facts(run_id, cfg.slug, collector.collect(cfg))
         except Exception as exc:  # one part down must not stop the run
             store.save_failure(run_id, collector.name, f"{type(exc).__name__}: {exc}")
+        if not cfg.name:
+            # The owner typed only an address. The site is read first, so its name is
+            # known before the Google and AI checks, which look for the business by name.
+            cfg.name = business_name(cfg, store.load_facts(run_id))
+            cfg.name_guessed = bool(cfg.name)
+            store.update_config(run_id, cfg.to_dict())
 
     facts = store.load_facts(run_id)
     findings = _analyze(cfg, store, run_id, facts, analyzers)
