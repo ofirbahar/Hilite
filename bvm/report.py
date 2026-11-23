@@ -12,7 +12,6 @@ from .models import Finding
 from .pipeline import RunResult
 
 TOP_N = 3
-EFFORT_LABELS = {1: "5 דק׳", 2: "שעה", 3: "יום", 4: "כמה ימים", 5: "שבועות"}
 PART_NAMES = {
     "site-crawler": "סריקת האתר",
     "ai-visibility": "בדיקת ה-AI",
@@ -128,7 +127,6 @@ def render_report(cfg: ClientConfig, result: RunResult, today: date | None = Non
         top=result.findings[:TOP_N],
         rest=result.findings[TOP_N:],
         failures=failures,
-        effort_labels=EFFORT_LABELS,
         back_url=back_url,
         home_url=home_url,
     )

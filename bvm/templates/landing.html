@@ -41,9 +41,9 @@
             <span class="verdict">אפשר לשפר</span>
           </div>
           <ol class="mini">
-            <li><span>1</span><b>להסיר חסימת AI</b><i>5 דק׳</i></li>
-            <li><span>2</span><b>להוסיף כותרות לדפים</b><i>5 דק׳</i></li>
-            <li><span>3</span><b>לתקן קישורים שבורים</b><i>שעה</i></li>
+            <li><span>1</span><b>להסיר חסימת AI</b></li>
+            <li><span>2</span><b>להוסיף כותרות לדפים</b></li>
+            <li><span>3</span><b>לתקן קישורים שבורים</b></li>
           </ol>
         </div>
         <button class="again" type="button" id="again" hidden>הפעל שוב</button>
@@ -83,7 +83,7 @@
     <div class="wrap split flip">
       <div class="copy">
         <h2>ציון אחד. שלוש משימות.</h2>
-        <p>הדוח נפתח בשלושת הדברים שהכי כדאי לתקן. כל משימה כתובה בעברית פשוטה: מה הבעיה, איך מתקנים, מי מתקן וכמה זמן זה לוקח.</p>
+        <p>הדוח נפתח בשלושת הדברים שהכי כדאי לתקן. כל משימה כתובה בעברית פשוטה: מה הבעיה, איך מתקנים ומי מתקן.</p>
         <p class="small">לחיצה על משימה פותחת אותה, כמו בדוח עצמו.</p>
       </div>
       <figure class="sheet" aria-label="דוגמה למשימות בדוח">
@@ -91,15 +91,15 @@
         <div class="rows">
           {% set chevron = '<svg class="ico" viewBox="0 0 14 14" aria-hidden="true"><path d="M9 2.5L4.5 7 9 11.5"/></svg>' %}
           <details open>
-            <summary><span class="n">1</span><span class="t">להסיר חסימת AI</span><span class="time">5 דק׳</span>{{ chevron|safe }}</summary>
+            <summary><span class="n">1</span><span class="t">להסיר חסימת AI</span>{{ chevron|safe }}</summary>
             <div class="inside nested"><p>האתר חוסם את מנועי ה-AI.</p><p class="fix">להסיר את החסימה בהגדרות האתר.</p><p class="by">מי מתקן: בונה האתר</p></div>
           </details>
           <details>
-            <summary><span class="n">2</span><span class="t">להוסיף כותרות לדפים</span><span class="time">5 דק׳</span>{{ chevron|safe }}</summary>
+            <summary><span class="n">2</span><span class="t">להוסיף כותרות לדפים</span>{{ chevron|safe }}</summary>
             <div class="inside nested"><p>דף אחד מופיע בגוגל בלי כותרת.</p><p class="fix">לכתוב לכל דף כותרת קצרה.</p><p class="by">מי מתקן: כותב התוכן</p></div>
           </details>
           <details>
-            <summary><span class="n">3</span><span class="t">לתקן קישורים שבורים</span><span class="time">שעה</span>{{ chevron|safe }}</summary>
+            <summary><span class="n">3</span><span class="t">לתקן קישורים שבורים</span>{{ chevron|safe }}</summary>
             <div class="inside nested"><p>קישור אחד מוביל לדף שגיאה.</p><p class="fix">לעדכן את הקישור לדף שקיים.</p><p class="by">מי מתקן: כותב התוכן</p></div>
           </details>
         </div>
