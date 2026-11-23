@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block head %}<noscript><meta http-equiv="refresh" content="3"></noscript>{% endblock %}
+{% block title %}בודקים את {{ run.config.get('name') }}{% endblock %}
+{% block body %}
+{% set asks_ai = run.config.get('buyer_questions') %}
+<main class="page waiting" data-waiting>
+  <h1>בודקים את {{ run.config.get('name') }}</h1>
+  <div class="scan" role="progressbar" aria-label="הבדיקה רצה"></div>
+  <ul class="doing{{ '' if asks_ai else ' two' }}" aria-hidden="true">
+    <li style="--i: 0">קוראים את האתר</li>
+    {% if asks_ai %}<li style="--i: 1">שואלים את ה-AI</li>{% endif %}
+    <li style="--i: {{ 2 if asks_ai else 1 }}">מדרגים את המשימות</li>
+  </ul>
+  <p>עד דקה. הדוח ייפתח כאן לבד.</p>
+</main>
+<script>
+/* Ask the server every two seconds; open the report the moment it is ready. */
+(function () {
+  if (!window.fetch || location.protocol === 'file:') return;
+  var timer = setInterval(function () {
+    fetch(location.href, { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (html) {
+      if (html.indexOf('data-waiting') < 0) { clearInterval(timer); location.reload(); }
+    }).catch(function () {});
+  }, 2000);
+})();
+</script>
+{% endblock %}

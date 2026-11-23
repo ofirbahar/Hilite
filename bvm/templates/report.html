@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>הדוח של {{ client.name }}</title>
+{% include "_style.html" %}
+</head>
+<body>
+{% set chevron = '<svg class="ico" viewBox="0 0 14 14" aria-hidden="true"><path d="M9 2.5L4.5 7 9 11.5"/></svg>' %}
+
+{% macro task(f, n=None) %}
+<details>
+  <summary>
+    {% if n %}<span class="n">{{ n }}</span>{% endif %}
+    <span class="t">{{ f.title }}</span>
+    <span class="time">{{ effort_labels[f.effort] }}</span>
+    {{ chevron|safe }}
+  </summary>
+  <div class="inside{% if n %} nested{% endif %}">
+    <p>{{ f.detail }}</p>
+    <p class="fix">{{ f.how_to_fix }}</p>
+    {% if f.owner %}<p class="by">מי מתקן: {{ f.owner }}</p>{% endif %}
+    {% if f.evidence or f.tech %}
+    <details class="tech">
+      <summary>פרטים טכניים</summary>
+      <ul>
+        {% if f.tech %}<li>{{ f.tech }}</li>{% endif %}
+        {% for e in f.evidence %}<li><bdi>{{ e }}</bdi></li>{% endfor %}
+      </ul>
+    </details>
+    {% endif %}
+  </div>
+</details>
+{% endmacro %}
+
+{% with check_url=back_url, check_label="בדיקה חדשה" %}{% include "_bar.html" %}{% endwith %}
+
+<main class="page">
+  <section class="score {{ status }}">
+    <span class="who">{{ client.name }}</span>
+    <span class="site"><bdi>{{ client.site }}</bdi></span>
+    <div class="ring" role="img" aria-label="ציון {{ score if score is not none else 'לא זמין' }} מתוך 100">
+      <svg viewBox="0 0 120 120" aria-hidden="true">
+        <circle class="track" cx="60" cy="60" r="54"/>
+        {% if score %}<circle class="value" cx="60" cy="60" r="54" pathLength="100" style="stroke-dasharray: {{ score }} 100"/>{% endif %}
+      </svg>
+      <div class="num"><b>{{ score if score is not none else "?" }}</b><small>מתוך 100</small></div>
+    </div>
+    <span class="verdict">{{ label }}</span>
+  </section>
+
+  {% if top %}
+  <section class="block">
+    <h2>מה לתקן קודם</h2>
+    <div class="rows">
+      {% for f in top %}{{ task(f, loop.index) }}{% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if ai or rest %}
+  <section class="block">
+    <h2>פרטים</h2>
+    <div class="rows plain">
+      {% if ai %}
+      <details>
+        <summary><span class="t">מה ה-AI עונה</span>
+          <span class="count">{{ ai.mentioned }} מתוך {{ ai.total }}</span>{{ chevron|safe }}</summary>
+        <div class="inside">
+          <ul class="bars">
+            <li class="you"><span>{{ client.name }}</span><b>{{ ai.mentioned }} מתוך {{ ai.total }}</b>
+              <div class="line"><i style="width: {{ (100 * ai.mentioned / ai.total)|round|int }}%"></i></div></li>
+            {% for name, count in ai.competitors %}
+            <li><span>{{ name }}</span><b>{{ count }} מתוך {{ ai.total }}</b>
+              <div class="line"><i style="width: {{ (100 * count / ai.total)|round|int }}%"></i></div></li>
+            {% endfor %}
+          </ul>
+          <ul class="asked">
+            {% for item in questions %}
+            <li><q>{{ item.question }}</q>
+              {% for a in item.answers %}
+              <span class="ans">{% if a.mentioned %}<span class="yes">הוזכרת</span>{% else %}<span class="no">לא הוזכרת</span>{% endif %}{% if a.rivals %}. הוזכרו: {{ a.rivals|join(", ") }}{% endif %}</span>
+              {% endfor %}
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </details>
+      {% endif %}
+      {% if rest %}
+      <details>
+        <summary><span class="t">עוד משימות</span><span class="count">{{ rest|length }}</span>{{ chevron|safe }}</summary>
+        <div class="rows nested">
+          {% for f in rest %}{{ task(f) }}{% endfor %}
+        </div>
+      </details>
+      {% endif %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% for part, error in failures %}
+  <p class="note">{{ part }} לא הושלמה. <bdi>{{ error }}</bdi></p>
+  {% endfor %}
+  <p class="note">נבדק ב-{{ today }}. לא שינינו דבר באתר.</p>
+</main>
+</body>
+</html>

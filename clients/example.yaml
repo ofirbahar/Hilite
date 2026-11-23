@@ -1,0 +1,24 @@
+# Settings for one client. Every part of the system reads from this file.
+name: Example Company
+slug: example
+site: https://www.example.com
+
+# Other names people use for the company.
+aliases: []
+
+# 3 to 5 competitor sites (used by later stages).
+competitors: []
+
+# Results should reflect what a buyer in this country sees.
+target_country: US
+
+# Questions buyers ask (used by the AI visibility check, later stage).
+buyer_questions: []
+
+# The approved one-line description of the company.
+approved_description: ""
+
+crawl:
+  max_pages: 50
+  delay_seconds: 0.5
+  slow_page_seconds: 2.0

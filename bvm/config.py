@@ -1,0 +1,94 @@
+from __future__ import annotations
+
+import ipaddress
+import socket
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
+from urllib.parse import urlparse
+
+import yaml
+
+
+class ConfigError(ValueError):
+    pass
+
+
+@dataclass
+class ClientConfig:
+    """The one settings file every part reads from."""
+
+    name: str
+    slug: str
+    site: str
+    aliases: list[str] = field(default_factory=list)
+    competitors: list[str] = field(default_factory=list)
+    target_country: str = "US"
+    buyer_questions: list[str] = field(default_factory=list)
+    approved_description: str = ""
+    max_pages: int = 50
+    delay_seconds: float = 0.5
+    slow_page_seconds: float = 2.0
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "ClientConfig":
+        return cls(**data)
+
+
+def _names(items) -> list[str]:
+    """Competitors may be written as plain names or as {name: ..., site: ...}."""
+    names = []
+    for item in items or []:
+        name = item.get("name", "") if isinstance(item, dict) else str(item)
+        if name.strip():
+            names.append(name.strip())
+    return names
+
+
+def check_site_address(site: str) -> str:
+    """Return the cleaned address, or raise ConfigError if it is not a full http(s) one."""
+    site = (site or "").strip()
+    parsed = urlparse(site)
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        raise ConfigError(f"'site' must be a full http(s) address, got {site!r}")
+    return f"{parsed.scheme}://{parsed.netloc}"
+
+
+def is_public_address(site: str) -> bool:
+    """True only if the host resolves to public internet addresses.
+
+    The web interface scans whatever address a visitor types, so it must refuse
+    addresses that point back into the server's own network.
+    """
+    host = urlparse(site).hostname
+    if not host:
+        return False
+    try:
+        infos = socket.getaddrinfo(host, None)
+    except socket.gaierror:
+        return False
+    return bool(infos) and all(ipaddress.ip_address(i[4][0]).is_global for i in infos)
+
+
+def load_config(path: str | Path) -> ClientConfig:
+    raw = yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
+    for required in ("name", "slug", "site"):
+        if not raw.get(required):
+            raise ConfigError(f"settings file {path} is missing '{required}'")
+    site = check_site_address(raw["site"])
+    crawl = raw.get("crawl") or {}
+    return ClientConfig(
+        name=raw["name"],
+        slug=raw["slug"],
+        site=site,
+        aliases=list(raw.get("aliases") or []),
+        competitors=_names(raw.get("competitors")),
+        target_country=raw.get("target_country", "US"),
+        buyer_questions=list(raw.get("buyer_questions") or []),
+        approved_description=raw.get("approved_description", ""),
+        max_pages=int(crawl.get("max_pages", 50)),
+        delay_seconds=float(crawl.get("delay_seconds", 0.5)),
+        slow_page_seconds=float(crawl.get("slow_page_seconds", 2.0)),
+    )

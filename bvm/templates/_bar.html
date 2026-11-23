@@ -1,0 +1,6 @@
+<header class="bar">
+  <div>
+    <a class="brand" href="{{ home_url or '#' }}" dir="ltr">{% include "_logo.html" %}</a>
+    {% if check_url %}<a class="go" href="{{ check_url }}">{{ check_label or 'בדיקה חדשה' }}</a>{% endif %}
+  </div>
+</header>

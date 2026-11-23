@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block head %}<meta name="description" content="בדיקה של דקה: איך האתר שלך נראה לגוגל, ומה עוזרי ה-AI עונים כששואלים על התחום שלך. ציון אחד ושלוש משימות לתיקון.">{% endblock %}
+{% block title %}Hilite | גוגל ו-AI ממליצים על העסק שלך?{% endblock %}
+{% block style %}{% include "_landing_style.html" %}{% endblock %}
+{% block body %}
+<main class="site">
+
+  <section class="hero">
+    <canvas class="field" id="field" aria-hidden="true"></canvas>
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <h1 class="rise" style="--d: 0">גוגל ו-AI ממליצים על העסק שלך?</h1>
+        <p class="lead rise" style="--d: 1">בדיקה של דקה מראה איך האתר שלך נראה לגוגל, ומה עוזרי ה-AI עונים כששואלים על התחום שלך.</p>
+        <div class="hero-act rise" style="--d: 2">
+          <a class="btn" href="{{ url_for('check') }}">בדוק את העסק</a>
+          <a class="quiet" href="#how">איך זה עובד</a>
+        </div>
+        <p class="facts rise" style="--d: 3">עד 30 דפים. 12 בדיקות באתר. ציון אחד ושלוש משימות.</p>
+      </div>
+
+      <figure class="demo rise" style="--d: 2" id="demo" aria-label="דוגמה: שאלה לעוזר AI, והדוח שמתקבל">
+        <div class="chat">
+          <div class="chat-top"><b>עוזר AI</b><span>דוגמה</span></div>
+          <p class="q">מה המסעדה הכי טובה באזור?</p>
+          <p class="a">
+            <span class="ln">ממליצים בעיקר על <mark>מתחרה א׳</mark> ועל <mark>מתחרה ב׳</mark>.</span>
+            <span class="ln">גם <mark>מתחרה ג׳</mark> מקבל ביקורות טובות.</span>
+          </p>
+          <p class="miss"><svg class="ico" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 3l8 8M11 3l-8 8"/></svg>העסק שלך לא הוזכר</p>
+        </div>
+        <div class="result">
+          <div class="result-score warn">
+            <div class="ring" role="img" aria-label="ציון לדוגמה: 62 מתוך 100">
+              <svg viewBox="0 0 120 120" aria-hidden="true">
+                <circle class="track" cx="60" cy="60" r="54"/>
+                <circle class="value" cx="60" cy="60" r="54" pathLength="100" style="stroke-dasharray: 62 100"/>
+              </svg>
+              <div class="num"><b id="demo-num">62</b><small>מתוך 100</small></div>
+            </div>
+            <span class="verdict">אפשר לשפר</span>
+          </div>
+          <ol class="mini">
+            <li><span>1</span><b>להסיר חסימת AI</b><i>5 דק׳</i></li>
+            <li><span>2</span><b>להוסיף כותרות לדפים</b><i>5 דק׳</i></li>
+            <li><span>3</span><b>לתקן קישורים שבורים</b><i>שעה</i></li>
+          </ol>
+        </div>
+        <button class="again" type="button" id="again" hidden>הפעל שוב</button>
+      </figure>
+    </div>
+  </section>
+
+  <section class="say" aria-label="למה זה חשוב">
+    <div class="wrap">
+      <p class="say-text" id="say">פעם חיפשו בגוגל וקיבלו עשרה קישורים. היום שואלים AI ומקבלים תשובה אחת. <em>מי שלא מוזכר בה, לא נמצא.</em></p>
+    </div>
+  </section>
+
+  <section class="part">
+    <div class="wrap split">
+      <div class="copy">
+        <h2>מי מופיע בתשובה במקומך</h2>
+        <p>כותבים את השאלות שהלקוחות שלך שואלים ואת שמות המתחרים. אנחנו שואלים את Claude, את ChatGPT ואת Perplexity, ומראים מי הוזכר בכל תשובה.</p>
+        <p class="small">עד 10 שאלות ו-5 מתחרים בכל בדיקה.</p>
+      </div>
+      <figure class="sheet" aria-label="דוגמה לחלק ה-AI בדוח">
+        <div class="sheet-top"><b>מה ה-AI עונה</b><span>דוגמה</span></div>
+        <ul class="bars" id="bars">
+          <li class="you"><span>העסק שלך</span><b>1 מתוך 4</b><div class="line"><i style="--w: 25%"></i></div></li>
+          <li><span>מתחרה א׳</span><b>3 מתוך 4</b><div class="line"><i style="--w: 75%"></i></div></li>
+          <li><span>מתחרה ב׳</span><b>3 מתוך 4</b><div class="line"><i style="--w: 75%"></i></div></li>
+        </ul>
+        <ul class="asked">
+          <li><q>מה המסעדה הכי טובה באזור?</q><span class="ans"><span class="no">לא הוזכרת</span>. הוזכרו: מתחרה א׳, מתחרה ב׳</span></li>
+          <li><q>איפה כדאי לאכול ארוחת בוקר?</q><span class="ans"><span class="yes">הוזכרת</span>. הוזכרו: מתחרה א׳</span></li>
+        </ul>
+      </figure>
+    </div>
+  </section>
+
+  <section class="part tint">
+    <div class="wrap split flip">
+      <div class="copy">
+        <h2>ציון אחד. שלוש משימות.</h2>
+        <p>הדוח נפתח בשלושת הדברים שהכי כדאי לתקן. כל משימה כתובה בעברית פשוטה: מה הבעיה, איך מתקנים, מי מתקן וכמה זמן זה לוקח.</p>
+        <p class="small">לחיצה על משימה פותחת אותה, כמו בדוח עצמו.</p>
+      </div>
+      <figure class="sheet" aria-label="דוגמה למשימות בדוח">
+        <div class="sheet-top"><b>מה לתקן קודם</b><span>דוגמה</span></div>
+        <div class="rows">
+          {% set chevron = '<svg class="ico" viewBox="0 0 14 14" aria-hidden="true"><path d="M9 2.5L4.5 7 9 11.5"/></svg>' %}
+          <details open>
+            <summary><span class="n">1</span><span class="t">להסיר חסימת AI</span><span class="time">5 דק׳</span>{{ chevron|safe }}</summary>
+            <div class="inside nested"><p>האתר חוסם את מנועי ה-AI.</p><p class="fix">להסיר את החסימה בהגדרות האתר.</p><p class="by">מי מתקן: בונה האתר</p></div>
+          </details>
+          <details>
+            <summary><span class="n">2</span><span class="t">להוסיף כותרות לדפים</span><span class="time">5 דק׳</span>{{ chevron|safe }}</summary>
+            <div class="inside nested"><p>דף אחד מופיע בגוגל בלי כותרת.</p><p class="fix">לכתוב לכל דף כותרת קצרה.</p><p class="by">מי מתקן: כותב התוכן</p></div>
+          </details>
+          <details>
+            <summary><span class="n">3</span><span class="t">לתקן קישורים שבורים</span><span class="time">שעה</span>{{ chevron|safe }}</summary>
+            <div class="inside nested"><p>קישור אחד מוביל לדף שגיאה.</p><p class="fix">לעדכן את הקישור לדף שקיים.</p><p class="by">מי מתקן: כותב התוכן</p></div>
+          </details>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="part">
+    <div class="wrap">
+      <h2>מה נבדק</h2>
+      <div class="ledger">
+        <div>
+          <h3>12 בדיקות באתר</h3>
+          <ul class="checks two">
+            <li>קישורים שבורים</li>
+            <li>דפים שמוסתרים מגוגל</li>
+            <li>דפים שחסומים לגוגל</li>
+            <li>חסימה של מנועי AI</li>
+            <li>דפים בלי כותרת</li>
+            <li>דפים בלי תיאור</li>
+            <li>כותרות שחוזרות על עצמן</li>
+            <li>כותרות ראשיות לא מסודרות</li>
+            <li>דפים איטיים</li>
+            <li>פרטי העסק בפורמט שמנועים קוראים</li>
+            <li>תמונות בלי תיאור</li>
+            <li>רשימת דפים למנועי חיפוש</li>
+          </ul>
+        </div>
+        <div>
+          <h3>3 בדיקות בתשובות ה-AI</h3>
+          <ul class="checks">
+            <li>בכמה תשובות ה-AI מזכיר אותך</li>
+            <li>באילו שאלות הוא ממליץ רק על מתחרים</li>
+            <li>על אילו אתרים הוא מסתמך</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="part tint" id="how">
+    <div class="wrap">
+      <h2>איך זה עובד</h2>
+      <ol class="steps">
+        <li><b>מזינים שם וכתובת</b><p>שם העסק וכתובת האתר. אפשר להוסיף מתחרים ושאלות של לקוחות.</p></li>
+        <li><b>אנחנו בודקים</b><p>קוראים עד 30 דפים באתר ושואלים את ה-AI. זה לוקח עד דקה.</p></li>
+        <li><b>מקבלים דוח</b><p>ציון מ-0 עד 100 ורשימת משימות, מהחשובה ביותר.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="part">
+    <div class="wrap split">
+      <div class="copy">
+        <h2>לא נוגעים באתר שלך</h2>
+        <p>הבדיקה קוראת את האתר כמו מבקר רגיל. היא לא משנה בו דבר.</p>
+      </div>
+      <ul class="plainlist">
+        <li><b>קוראים בלבד</b><p>שום דבר באתר לא נכתב, לא נמחק ולא משתנה.</p></li>
+        <li><b>מכבדים את הכללים של האתר</b><p>דף שביקשת מסורקים לא לקרוא, אנחנו לא קוראים.</p></li>
+        <li><b>מזדהים בשם</b><p>כל ביקור שלנו באתר מסומן בשם הבודק.</p></li>
+        <li><b>חשוב לדעת</b><p>תשובה שמתקבלת ישירות מעוזר AI לא תמיד זהה למה שרואים באפליקציה שלו.</p></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="close">
+    <div class="wrap">
+      <h2>כמה קל למצוא אותך?</h2>
+      <a class="btn" href="{{ url_for('check') }}">בדוק את העסק</a>
+    </div>
+  </section>
+</main>
+<footer class="foot"><div class="wrap"><span class="foot-logo" dir="ltr">{% with plain=True %}{% include "_logo.html" %}{% endwith %}</span><a href="{{ url_for('check') }}">בדיקה חדשה</a></div></footer>
+{% include "_landing_script.html" %}
+{% endblock %}

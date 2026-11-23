@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f5f6f2">
+{% block head %}{% endblock %}
+<title>{% block title %}Hilite{% endblock %}</title>
+{% include "_style.html" %}
+{% block style %}{% endblock %}
+</head>
+<body>
+{% with home_url=url_for('home'), check_url=url_for('check'), check_label='בדוק את העסק' %}{% include "_bar.html" %}{% endwith %}
+{% block body %}{% endblock %}
+</body>
+</html>

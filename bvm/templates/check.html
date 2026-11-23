@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}בדיקת העסק{% endblock %}
+{% block body %}
+<main class="page">
+  <div class="hello">
+    <h1>בדיקת העסק</h1>
+    <p>שם וכתובת אתר. זה הכול.</p>
+  </div>
+
+  <form method="post" action="{{ url_for('scan') }}">
+    {% if error %}<div class="alert" role="alert">{{ error }}</div>{% endif %}
+    <div class="field">
+      <label for="name">שם העסק</label>
+      <input id="name" name="name" required autocomplete="organization" value="{{ form.get('name', '') }}">
+    </div>
+    <div class="field">
+      <label for="site">כתובת האתר</label>
+      <input id="site" name="site" type="url" dir="ltr" required inputmode="url"
+             placeholder="https://www.example.co.il" value="{{ form.get('site', '') }}">
+    </div>
+    <details class="extra"{% if form.get('competitors') or form.get('questions') %} open{% endif %}>
+      <summary>להשוות למתחרים ב-AI</summary>
+      <div class="field">
+        <label for="competitors">מתחרים, עם פסיק ביניהם</label>
+        <input id="competitors" name="competitors" value="{{ form.get('competitors', '') }}">
+      </div>
+      <div class="field">
+        <label for="questions">שאלות של לקוחות, אחת בכל שורה</label>
+        <textarea id="questions" name="questions" rows="3"
+                  placeholder="מה המסעדה הכי טובה באזור?">{{ form.get('questions', '') }}</textarea>
+      </div>
+    </details>
+    <button class="btn" type="submit">בדוק את העסק</button>
+  </form>
+
+  {% if runs %}
+  <section class="block">
+    <h2>בדיקות קודמות</h2>
+    <ul class="rows runs">
+      {% for run in runs %}
+      <li><a href="{{ url_for('show_run', run_id=run.id) }}">
+        <b>{{ run.config.get('name') or run.client }}</b>
+        <span>{% if run.status == 'running' %}בבדיקה{% elif run.status == 'failed' %}נכשלה{% else %}<bdi>{{ run.started_at[8:10] }}.{{ run.started_at[5:7] }}.{{ run.started_at[:4] }}</bdi>{% endif %}</span>
+        <svg class="ico" viewBox="0 0 14 14" aria-hidden="true"><path d="M9 2.5L4.5 7 9 11.5"/></svg>
+      </a></li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+</main>
+{% endblock %}

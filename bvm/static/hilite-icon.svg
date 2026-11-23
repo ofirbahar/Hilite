@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Hilite">
+  <rect width="64" height="64" rx="14" fill="#ffe24a"/>
+  <path d="M21 12V52M21 37a11 11 0 0 1 22 0V52" fill="none" stroke="#14201c" stroke-width="8"/>
+</svg>

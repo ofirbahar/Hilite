@@ -1,0 +1,168 @@
+<script>
+(function () {
+  'use strict';
+  var still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* 1. The hero demo: play the AI answer once, then offer a replay. */
+  var demo = document.getElementById('demo');
+  var num = document.getElementById('demo-num');
+  var again = document.getElementById('again');
+  var counting = 0;
+  function count() {
+    var started = null;
+    function frame(now) {
+      if (started === null) started = now;
+      var t = Math.min(1, (now - started) / 1100);
+      num.textContent = Math.round(62 * (1 - Math.pow(1 - t, 4)));
+      if (t < 1) counting = requestAnimationFrame(frame);
+    }
+    counting = requestAnimationFrame(frame);
+  }
+  function play() {
+    cancelAnimationFrame(counting);
+    again.hidden = true;
+    demo.classList.remove('play');
+    void demo.offsetWidth;                       // restart the CSS timeline
+    demo.classList.add('play');
+    num.textContent = '0';
+  }
+  if (demo && !still) {
+    // The number and the replay link follow the CSS timeline itself, so they stay in
+    // step with it even when the tab was in the background while it played.
+    demo.querySelector('.ring .value').addEventListener('animationstart', count);
+    demo.querySelector('.mini li:last-child').addEventListener('animationend', function () { again.hidden = false; });
+    again.addEventListener('click', play);
+    play();
+  }
+
+  /* 2. The statement: words light up as the reader scrolls through them. */
+  var say = document.getElementById('say');
+  if (say) {
+    var words = [];
+    (function wrap(node) {
+      Array.prototype.slice.call(node.childNodes).forEach(function (child) {
+        if (child.nodeType === 3) {
+          var parts = child.textContent.split(/(\s+)/);
+          var frag = document.createDocumentFragment();
+          parts.forEach(function (part) {
+            if (!part.trim()) { frag.appendChild(document.createTextNode(part)); return; }
+            var span = document.createElement('span');
+            span.className = 'w';
+            span.textContent = part;
+            words.push(span);
+            frag.appendChild(span);
+          });
+          node.replaceChild(frag, child);
+        } else if (child.nodeType === 1) { wrap(child); }
+      });
+    })(say);
+    var queued = false;
+    function read() {
+      queued = false;
+      var box = say.getBoundingClientRect();
+      var vh = window.innerHeight;
+      var p = (vh * 0.82 - box.top) / (box.height + vh * 0.32);
+      var lit = still ? words.length : Math.round(Math.max(0, Math.min(1, p)) * words.length);
+      words.forEach(function (w, i) { w.classList.toggle('on', i < lit); });
+    }
+    read();
+    if (!still) {
+      window.addEventListener('scroll', function () { if (!queued) { queued = true; requestAnimationFrame(read); } }, { passive: true });
+      window.addEventListener('resize', read);
+    }
+  }
+
+  /* 3. The comparison bars grow the first time they are seen. */
+  var bars = document.getElementById('bars');
+  if (bars && !still && 'IntersectionObserver' in window) {
+    var seen = new IntersectionObserver(function (entries) {
+      if (entries[0].isIntersecting) { bars.classList.add('grow'); seen.disconnect(); }
+    }, { threshold: 0.6 });
+    seen.observe(bars);
+  }
+
+  /* 4. The hero field: every dot is a place a business could be mentioned. A slow beam
+     passes over them; the few it catches in yellow are the ones that were. Seeded, so
+     the field is the same on every visit. */
+  var canvas = document.getElementById('field');
+  if (!canvas || !canvas.getContext) return;
+  var ctx = canvas.getContext('2d');
+  var GAP = 28, dots = [], w = 0, h = 0, running = false, raf = 0;
+  var beam = { x: 0, y: 0, tx: 0, ty: 0 }, pointer = null;
+  function seeded(seed) {                         // mulberry32
+    return function () {
+      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+      var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function build() {
+    var ratio = Math.min(window.devicePixelRatio || 1, 2);
+    w = canvas.clientWidth; h = canvas.clientHeight;
+    canvas.width = w * ratio; canvas.height = h * ratio;
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    var random = seeded(62);
+    dots = [];
+    for (var y = GAP / 2; y < h; y += GAP) {
+      for (var x = GAP / 2; x < w; x += GAP) {
+        dots.push({ x: x + (random() - 0.5) * 5, y: y + (random() - 0.5) * 5, named: random() < 0.045, glow: 0 });
+      }
+    }
+    beam.x = beam.tx = w * 0.3; beam.y = beam.ty = h * 0.45;
+  }
+  function draw(time) {
+    if (pointer) { beam.tx = pointer.x; beam.ty = pointer.y; }
+    else {
+      beam.tx = w * (0.5 + 0.42 * Math.sin(time / 5200));
+      beam.ty = h * (0.45 + 0.3 * Math.sin(time / 3700 + 1.3));
+    }
+    beam.x += (beam.tx - beam.x) * 0.06; beam.y += (beam.ty - beam.y) * 0.06;
+    var reach = Math.max(180, Math.min(w, h) * 0.34);
+    ctx.clearRect(0, 0, w, h);
+    for (var i = 0; i < dots.length; i++) {
+      var d = dots[i];
+      var dx = d.x - beam.x, dy = d.y - beam.y;
+      var near = Math.max(0, 1 - Math.sqrt(dx * dx + dy * dy) / reach);
+      d.glow += (near * near - d.glow) * 0.12;
+      var g = d.glow;
+      if (d.named && g > 0.02) {
+        ctx.fillStyle = 'rgba(255, 216, 0, ' + (0.25 + 0.75 * g) + ')';
+        ctx.fillRect(d.x - 3 - 4 * g, d.y - 2 - g, 6 + 8 * g, 4 + 2 * g);
+      } else {
+        ctx.fillStyle = 'rgba(20, 32, 28, ' + (0.14 + 0.34 * g) + ')';
+        ctx.beginPath(); ctx.arc(d.x, d.y, 1.1 + 1.1 * g, 0, 6.2832); ctx.fill();
+      }
+    }
+    if (running) raf = requestAnimationFrame(draw);
+  }
+  function start() { if (!running && !still) { running = true; raf = requestAnimationFrame(draw); } }
+  function stop() { running = false; cancelAnimationFrame(raf); }
+  build();
+  if (still) {
+    for (var s = 0; s < 40; s++) draw(9000);      // settle one resting frame
+  } else {
+    var hero = canvas.parentNode;
+    if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+      hero.addEventListener('pointermove', function (e) {
+        var box = canvas.getBoundingClientRect();
+        pointer = { x: e.clientX - box.left, y: e.clientY - box.top };
+      });
+      hero.addEventListener('pointerleave', function () { pointer = null; });
+    }
+    if ('IntersectionObserver' in window) {
+      var inView = false;
+      new IntersectionObserver(function (entries) {
+        inView = entries[0].isIntersecting;
+        inView ? start() : stop();
+      }).observe(canvas);
+      document.addEventListener('visibilitychange', function () { document.hidden || !inView ? stop() : start(); });
+    } else { start(); }
+  }
+  var resizing = 0;
+  window.addEventListener('resize', function () {
+    clearTimeout(resizing);
+    resizing = setTimeout(function () { build(); if (still) for (var s = 0; s < 40; s++) draw(9000); }, 150);
+  });
+})();
+</script>
