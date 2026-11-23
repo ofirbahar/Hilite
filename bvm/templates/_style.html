@@ -1,7 +1,5 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23ffe24a'/%3E%3Cpath d='M21 12V52M21 37a11 11 0 0 1 22 0V52' fill='none' stroke='%2314201c' stroke-width='8'/%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&family=IBM+Plex+Sans+Hebrew:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/fonts/fonts.css">
 <style>
 /* Printed paper and a highlighter. The page is cool paper with dark ink; a name the AI
    mentions gets the yellow marker, and the one blue is kept for things you can press.
@@ -32,6 +30,11 @@ a { color: var(--accent); text-decoration: none; text-underline-offset: 0.2em; }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
 svg.ico { width: 14px; height: 14px; flex: none; stroke: currentColor; fill: none;
   stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* the first stop for the Tab key: straight to the content */
+.skip { position: absolute; inset-inline-start: 12px; top: 8px; z-index: 20; background: var(--ink); color: var(--paper);
+  padding: 10px 16px; border-radius: 8px; font-weight: 600; transform: translateY(-200%); }
+.skip:focus { transform: none; }
 
 /* top bar */
 .bar { position: sticky; top: 0; z-index: 10; background: rgba(245, 246, 242, 0.82);
@@ -85,7 +88,7 @@ summary .n { font-family: var(--display); font-weight: 900; font-size: 26px; lin
 summary .t { font-weight: 600; flex: 1; min-width: 0; }
 summary .count { font-size: 14px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums;
   background: var(--fill); border-radius: 999px; padding: 3px 10px; }
-summary .ico { color: #9aa49e; transition: transform 200ms var(--ease-out); }
+summary .ico { color: #7a857f; transition: transform 200ms var(--ease-out); }
 details[open] > summary .ico { transform: rotate(-90deg); }
 summary:active { opacity: 0.6; }
 .inside { padding: 0 0 22px; display: flex; flex-direction: column; gap: 6px; color: var(--muted); font-size: 16px; }
@@ -129,11 +132,11 @@ form { display: flex; flex-direction: column; gap: 16px; }
 .field { display: flex; flex-direction: column; gap: 6px; }
 label { font-size: 14px; font-weight: 600; }
 input, textarea { font: inherit; color: inherit; background: var(--card); width: 100%; min-height: 54px;
-  border: 1px solid #b9c0b7; border-radius: 10px; padding: 12px 16px;
+  border: 1px solid #7f8a84; border-radius: 10px; padding: 12px 16px;
   transition: border-color 140ms ease, box-shadow 140ms ease; }
 input:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(27, 59, 255, 0.16); }
 input[dir="ltr"] { text-align: left; }
-input::placeholder, textarea::placeholder { color: #6f7a75; }
+input::placeholder, textarea::placeholder { color: #66716c; }
 .btn { font: inherit; font-weight: 600; color: #fff; background: var(--accent); border: 0; border-radius: 999px;
   min-height: 54px; padding: 0 28px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 10px;
   transition: background-color 160ms ease, transform 120ms var(--ease-out); }
@@ -143,6 +146,12 @@ input::placeholder, textarea::placeholder { color: #6f7a75; }
   .btn:hover { background: var(--accent-press); }
   .btn:hover svg.ico { transform: translateX(-4px); }
 }
+.prose ul { list-style: disc; padding-inline-start: 20px; display: flex; flex-direction: column; gap: 6px; }
+.prose .block { gap: 8px; }
+.prose .block > h2 { padding-bottom: 2px; }
+.prose b { font-weight: 600; }
+.consent { margin-top: 0; text-align: center; }
+.consent a { text-decoration: underline; }
 .hint { font-size: 14px; color: var(--muted); margin-top: -8px; }
 .extra > summary { display: inline; min-height: 0; padding: 0; color: var(--accent); font-size: 15px; font-weight: 500; }
 .extra[open] > summary { display: block; margin-bottom: 16px; }
@@ -153,7 +162,7 @@ input::placeholder, textarea::placeholder { color: #6f7a75; }
 .runs a:active { opacity: 0.6; }
 .runs b { font-weight: 600; overflow-wrap: anywhere; }
 .runs span { font-size: 14px; color: var(--muted); white-space: nowrap; }
-.runs .ico { color: #9aa49e; transition: transform 200ms var(--ease-out); }
+.runs .ico { color: #7a857f; transition: transform 200ms var(--ease-out); }
 @media (hover: hover) and (pointer: fine) { .runs a:hover .ico { transform: translateX(-4px); } }
 
 /* waiting */

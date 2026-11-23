@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}בדיקת העסק{% endblock %}
 {% block body %}
-<main class="page">
+<main class="page" id="main">
   <div class="hello">
     <h1>בדיקת העסק</h1>
     <p>שם העסק וכתובת. זה הכול.</p>
@@ -36,6 +36,7 @@
       </div>
     </details>
     <button class="btn" type="submit">בדוק את העסק</button>
+    <p class="hint consent">בלחיצה על הכפתור נסרוק את הכתובת שהזנת ונשמור את התוצאה. <a href="{{ url_for('privacy') }}">מה אנחנו שומרים</a></p>
   </form>
 
   {% if runs %}

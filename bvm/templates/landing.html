@@ -1,22 +1,22 @@
 {% extends "base.html" %}
 {% block head %}<script>document.documentElement.classList.add('js');</script>
-<meta name="description" content="בדיקה של דקה: איך האתר שלך נראה לגוגל, ומה עוזרי ה-AI עונים כששואלים על התחום שלך. ציון אחד ושלוש משימות לתיקון.">{% endblock %}
+<meta name="description" content="בדיקה קצרה: איך האתר שלך נראה לגוגל, ומה עוזרי ה-AI עונים כששואלים על התחום שלך. ציון אחד ושלוש משימות לתיקון.">{% endblock %}
 {% block title %}Hilite | גוגל ו-AI ממליצים על העסק שלך?{% endblock %}
 {% block style %}{% include "_landing_style.html" %}{% endblock %}
 {% block body %}
-<main class="landing">
+<main class="landing" id="main">
 
   <section class="hero">
     <canvas class="dotfield" id="field" aria-hidden="true"></canvas>
     <div class="wrap hero-grid">
       <div class="hero-copy">
         <h1 class="rise" style="--d: 0">גוגל ו-AI ממליצים על העסק שלך?</h1>
-        <p class="lead rise" style="--d: 1">בדיקה של דקה מראה איך האתר שלך נראה לגוגל, ומה עוזרי ה-AI עונים כששואלים על התחום שלך.</p>
+        <p class="lead rise" style="--d: 1">בדיקה קצרה מראה איך האתר שלך נראה לגוגל, ומה עוזרי ה-AI עונים כששואלים על התחום שלך.</p>
         <div class="hero-act rise" style="--d: 2">
           <a class="btn" href="{{ url_for('check') }}">בדוק את העסק</a>
           <a class="quiet" href="#how">איך זה עובד</a>
         </div>
-        <p class="facts rise" style="--d: 3">עד 30 דפים. 12 בדיקות באתר. ציון אחד ושלוש משימות.</p>
+        <p class="facts rise" style="--d: 3">עד 30 דפים. 13 בדיקות באתר. ציון אחד ושלוש משימות.</p>
       </div>
 
       <figure class="demo rise" style="--d: 2" id="demo" aria-label="דוגמה: שאלה לעוזר AI, והדוח שמתקבל">
@@ -53,7 +53,7 @@
 
   <section class="say" aria-label="למה זה חשוב">
     <div class="wrap">
-      <p class="say-text" id="say">פעם חיפשו בגוגל וקיבלו עשרה קישורים. היום שואלים AI ומקבלים תשובה אחת. <em>מי שלא מוזכר בה, לא נמצא.</em></p>
+      <p class="say-text" id="say">פעם חיפשו בגוגל וקיבלו עשרה קישורים. היום יותר ויותר אנשים שואלים AI ומקבלים תשובה אחת. <em>מי שלא מוזכר בה, לא נמצא שם.</em></p>
     </div>
   </section>
 
@@ -61,8 +61,8 @@
     <div class="wrap split">
       <div class="copy">
         <h2>מי מופיע בתשובה במקומך</h2>
-        <p>כותבים את השאלות שהלקוחות שלך שואלים ואת שמות המתחרים. אנחנו שואלים את Claude, את ChatGPT ואת Perplexity, ומראים מי הוזכר בכל תשובה.</p>
-        <p class="small">עד 10 שאלות ו-5 מתחרים בכל בדיקה.</p>
+        <p>כותבים את השאלות שהלקוחות שלך שואלים ואת שמות המתחרים. אנחנו שואלים עוזרי AI כמו Claude, ChatGPT ו-Perplexity, ומראים מי הוזכר בכל תשובה.</p>
+        <p class="small">עד 10 שאלות ו-5 מתחרים בכל בדיקה. בדיקת ה-AI פועלת רק כשהיא מחוברת במערכת.</p>
       </div>
       <figure class="sheet" aria-label="דוגמה לחלק ה-AI בדוח">
         <div class="sheet-top"><b>מה ה-AI עונה</b><span>דוגמה</span></div>
@@ -112,7 +112,7 @@
       <h2>מה נבדק</h2>
       <div class="ledger">
         <div>
-          <h3>12 בדיקות באתר</h3>
+          <h3>13 בדיקות באתר</h3>
           <ul class="checks two">
             <li>קישורים שבורים</li>
             <li>דפים שמוסתרים מגוגל</li>
@@ -126,6 +126,7 @@
             <li>פרטי העסק בפורמט שמנועים קוראים</li>
             <li>תמונות בלי תיאור</li>
             <li>רשימת דפים למנועי חיפוש</li>
+            <li>דפים שריקים בלי דפדפן</li>
           </ul>
         </div>
         <div>
@@ -145,7 +146,7 @@
       <h2>איך זה עובד</h2>
       <ol class="steps">
         <li><b>מזינים שם וכתובת</b><p>שם העסק וכתובת האתר. אין אתר? גם דף פייסבוק, אינסטגרם או Wolt מתאים.</p></li>
-        <li><b>אנחנו בודקים</b><p>קוראים עד 30 דפים באתר ושואלים את ה-AI. זה לוקח עד דקה.</p></li>
+        <li><b>אנחנו בודקים</b><p>קוראים עד 30 דפים באתר, ושואלים את ה-AI אם הוא מחובר. בדרך כלל זה לוקח כדקה.</p></li>
         <li><b>מקבלים דוח</b><p>ציון מ-0 עד 100 ורשימת משימות, מהחשובה ביותר.</p></li>
       </ol>
     </div>
@@ -173,6 +174,6 @@
     </div>
   </section>
 </main>
-<footer class="foot"><div class="wrap"><span class="foot-logo" dir="ltr">{% with plain=True %}{% include "_logo.html" %}{% endwith %}</span><a href="{{ url_for('check') }}">בדיקה חדשה</a></div></footer>
+<footer class="foot"><div class="wrap"><span class="foot-logo" dir="ltr">{% with plain=True %}{% include "_logo.html" %}{% endwith %}</span><nav aria-label="קישורי סיום"><a href="{{ url_for('privacy') }}">מה אנחנו שומרים</a><a href="{{ url_for('check') }}">בדיקה חדשה</a></nav></div></footer>
 {% include "_landing_script.html" %}
 {% endblock %}

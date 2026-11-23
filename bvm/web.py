@@ -75,6 +75,10 @@ def create_app(db_path: str = "bvm.sqlite3", allow_private: bool = False,
     def home():
         return render_template("landing.html")
 
+    @app.get("/privacy")
+    def privacy():
+        return render_template("privacy.html")
+
     @app.get("/check")
     def check():
         return render_template("check.html", runs=recent_runs(), error="", form={})

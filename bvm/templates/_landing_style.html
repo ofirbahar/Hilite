@@ -85,7 +85,7 @@
 .say { background: var(--night); color: var(--night-ink); padding: clamp(96px, 16vw, 200px) 0; }
 .say-text { font-family: var(--display); font-weight: 700; font-size: clamp(30px, 5.4vw, 76px); line-height: 1.16; max-width: 17em; text-wrap: balance; }
 .say-text em { font-style: normal; }
-.say-text .w { opacity: 0.2; transition: opacity 260ms ease, color 260ms ease; }
+.say-text .w { opacity: 0.5; transition: opacity 260ms ease, color 260ms ease; }
 .say-text .w.on { opacity: 1; }
 .say-text em .w.on { color: var(--mark); }
 .say ::selection { background: var(--mark); color: var(--night); }
@@ -136,6 +136,7 @@
 .foot .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .foot-logo { color: var(--night-ink); }
 .foot-logo .logo { height: 26px; }
+.foot nav { display: flex; gap: 22px; }
 .foot a { color: var(--night-ink); min-height: 44px; display: inline-flex; align-items: center; }
 
 @media (max-width: 900px) {

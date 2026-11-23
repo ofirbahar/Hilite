@@ -10,6 +10,7 @@
 {% block style %}{% endblock %}
 </head>
 <body>
+<a class="skip" href="#main">דלג לתוכן</a>
 {% with home_url=url_for('home'), check_url=url_for('check'), check_label='בדוק את העסק' %}{% include "_bar.html" %}{% endwith %}
 {% block body %}{% endblock %}
 </body>

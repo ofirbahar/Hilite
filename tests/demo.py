@@ -33,6 +33,10 @@ ANSWERS = {
 }
 
 
+# The demo is one file with no server behind it, so its fonts cannot come from /static.
+FONTS = ('<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900'
+         '&family=IBM+Plex+Sans+Hebrew:wght@400;500;600&display=swap" rel="stylesheet">')
+
 SCRIPT = """
 <script>
 (function () {
@@ -119,6 +123,8 @@ def main(out_dir: str) -> None:
             + '\n<div data-view="report" hidden>' + note + report_body + "</div>"
             + SCRIPT + "</body>\n</html>\n")
     page = page.replace('href="/check"', 'href="#check"').replace('href="/"', 'href="#home"')
+    page = page.replace('href="/privacy"', 'href="#home"')
+    page = page.replace('<link rel="stylesheet" href="/static/fonts/fonts.css">', FONTS)
     (out / "site-demo.html").write_text(page, encoding="utf-8")
     server.shutdown()
     db.unlink(missing_ok=True)
