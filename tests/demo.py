@@ -4,6 +4,7 @@
 """
 from __future__ import annotations
 
+import re
 import sys
 import threading
 from http.server import ThreadingHTTPServer
@@ -103,7 +104,9 @@ def main(out_dir: str) -> None:
                    .replace("<bdi>https://acme-demo.test</bdi>", "<bdi data-site>https://acme-demo.test</bdi>", 1)
                    .replace("<span>Acme</span>", "<span data-biz>Acme</span>")
                    .replace('<div class="ring"', '<span class="site">הדגמה. הציון והמשימות הם נתוני דוגמה.</span>\n    <div class="ring"', 1))
-    waiting_body = _body(waiting).replace("בודקים את Acme", 'בודקים את <span data-biz>Acme</span>')
+    # The demo has no server to ask, so the waiting screen's polling script is left out.
+    waiting_body = re.sub(r"<script>.*?</script>", "", _body(waiting), flags=re.S)
+    waiting_body = waiting_body.replace("בודקים את Acme", 'בודקים את <span data-biz>Acme</span>')
     page = (head + "</head>\n<body>\n" + bar
             + '\n<div data-view="home">' + _body(landing) + "</div>"
             + '\n<div data-view="check" hidden>' + _body(check) + "</div>"
