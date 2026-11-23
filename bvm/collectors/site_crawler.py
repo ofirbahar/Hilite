@@ -14,6 +14,7 @@ from urllib.robotparser import RobotFileParser
 import requests
 from bs4 import BeautifulSoup
 
+from .. import render
 from ..config import ClientConfig, is_public_address
 from ..models import Fact
 
@@ -21,8 +22,10 @@ NAME = "site-crawler"
 USER_AGENT = "BrandVisibilityMonitor/0.1 (site audit bot)"
 AI_CRAWLERS = ["GPTBot", "ClaudeBot", "PerplexityBot", "Google-Extended"]
 TIMEOUT = 15
-MAX_BYTES = 2_000_000      # never read more than this of one page
+MAX_BYTES = 8_000_000      # never read more than this of one page; shop pages run to megabytes
 MAX_REDIRECTS = 5
+MAX_RENDERED = 12          # pages opened in a real browser per scan; each takes seconds
+MAX_WAIT_SECONDS = 10      # the longest we wait when a site asks us to slow down
 SITEMAP_PATHS = ("/sitemap.xml", "/sitemap_index.xml")
 TRACKING = ("utm_", "fbclid=", "gclid=")  # the same page under a different address
 
@@ -40,13 +43,32 @@ class Fetched:
     redirected_to: str = ""     # set when the address sent us somewhere else
 
 
+DEFAULT_PORTS = {"http": 80, "https": 443}
+
+
+def _netloc(parsed) -> str:
+    """Host and port, without a port that only repeats the default one."""
+    host = (parsed.hostname or "").lower()
+    try:
+        port = parsed.port
+    except ValueError:
+        port = None
+    return host if port in (None, DEFAULT_PORTS.get(parsed.scheme)) else f"{host}:{port}"
+
+
 def _host(url: str) -> str:
-    return urlparse(url).netloc.lower().removeprefix("www.")
+    return _netloc(urlparse(url)).removeprefix("www.")
 
 
 def _same_host(url: str, root: str) -> bool:
     """example.com and www.example.com are the same site."""
     return _host(url) == _host(root)
+
+
+def _related(url: str, root: str) -> bool:
+    """One host is a subdomain of the other, as with a shop that moved to shop.example.com."""
+    a, b = _host(url), _host(root)
+    return a == b or a.endswith("." + b) or b.endswith("." + a)
 
 
 def _clean(url: str) -> str:
@@ -55,7 +77,13 @@ def _clean(url: str) -> str:
     p = urlparse(url)
     query = "&".join(part for part in p.query.split("&")
                      if part and not part.lower().startswith(TRACKING))
-    return urlunparse((p.scheme.lower(), p.netloc.lower(), p.path or "/", p.params, query, ""))
+    return urlunparse((p.scheme.lower(), _netloc(p), p.path or "/", p.params, query, ""))
+
+
+def is_shell(page: dict) -> bool:
+    """A page that is all scripts and no content: it is built in the visitor's browser."""
+    return (page.get("scripts", 0) >= 3 and page.get("word_count", 0) < 50
+            and not page.get("links"))
 
 
 def _text(node) -> str:
@@ -90,6 +118,7 @@ def parse_page(url: str, html: str | bytes, charset: str | None = None) -> dict:
         "meta_robots": (robots.get("content") or "").lower() if robots else "",
         "lang": (soup.html.get("lang") or "") if soup.html else "",
         "has_structured_data": bool(soup.find("script", type="application/ld+json")),
+        "scripts": len(soup.find_all("script")),
         "images": len(images),
         "images_missing_alt": sum(1 for i in images if not (i.get("alt") or "").strip()),
         "word_count": len(body_text.split()),
@@ -100,12 +129,35 @@ def parse_page(url: str, html: str | bytes, charset: str | None = None) -> dict:
 class SiteCrawler:
     name = NAME
 
-    def __init__(self, session: requests.Session | None = None, public_only: bool = False):
+    def __init__(self, session: requests.Session | None = None, public_only: bool = False,
+                 render: bool = False):
         """public_only: refuse any address, including one a redirect leads to, that is
-        not on the public internet. The web interface switches this on."""
+        not on the public internet. The web interface switches this on.
+        render: open pages that are empty without a browser in a real one (needs Playwright)."""
         self.session = session or requests.Session()
         self.session.headers["User-Agent"] = USER_AGENT
         self.public_only = public_only
+        self.render = render
+        self._browser = None
+        self._rendered = 0
+
+    def _render(self, url: str) -> str | None:
+        """The page after its scripts ran, or None when no browser can be used."""
+        if not self.render or self._rendered >= MAX_RENDERED or not render.available():
+            return None
+        if self._browser is None:
+            try:
+                self._browser = render.Browser(USER_AGENT, self.public_only).__enter__()
+            except Exception:  # noqa: BLE001 - no browser on this machine: scan without one
+                self.render = False
+                return None
+        self._rendered += 1
+        return self._browser.html(url)
+
+    def _close_browser(self) -> None:
+        if self._browser is not None:
+            self._browser.__exit__()
+            self._browser = None
 
     def _get(self, url: str) -> tuple[Fetched | None, float, str]:
         started = time.monotonic()
@@ -118,7 +170,8 @@ class SiteCrawler:
     def _fetch(self, url: str) -> tuple[Fetched | None, str]:
         """Follow redirects by hand so every hop is checked before it is requested."""
         current = url
-        for _ in range(MAX_REDIRECTS + 1):
+        waited = False
+        for _ in range(MAX_REDIRECTS + 2):
             if urlparse(current).scheme not in ("http", "https"):
                 return None, "BlockedAddress"
             if self.public_only and not is_public_address(current):
@@ -127,6 +180,11 @@ class SiteCrawler:
                                   stream=True) as response:
                 if response.is_redirect:
                     current = urljoin(current, response.headers["Location"])
+                    continue
+                pause = response.headers.get("Retry-After", "")
+                if response.status_code in (429, 503) and pause.isdigit() and not waited:
+                    waited = True                  # the site asked for a pause: give it one
+                    time.sleep(min(int(pause), MAX_WAIT_SECONDS))
                     continue
                 ctype = response.headers.get("Content-Type", "").lower()
                 body = b""
@@ -150,8 +208,8 @@ class SiteCrawler:
         return bool(fetched is not None and fetched.status == 200
                     and "html" not in fetched.content_type)
 
-    def _site_facts(self, cfg: ClientConfig) -> tuple[Fact, RobotFileParser | None]:
-        response, _, _ = self._get(cfg.site + "/robots.txt")
+    def _site_facts(self, site: str) -> tuple[Fact, RobotFileParser | None]:
+        response, _, _ = self._get(site + "/robots.txt")
         rules = None
         has_robots = bool(response is not None and response.status == 200
                           and "html" not in response.content_type)
@@ -162,41 +220,65 @@ class SiteCrawler:
         declared = bool(rules and rules.site_maps())
         data = {
             "has_robots_txt": has_robots,
-            "has_sitemap": declared or any(self._is_file(cfg.site + p) for p in SITEMAP_PATHS),
+            "has_sitemap": declared or any(self._is_file(site + p) for p in SITEMAP_PATHS),
             "ai_crawlers_blocked": [
-                bot for bot in AI_CRAWLERS if rules and not rules.can_fetch(bot, cfg.site + "/")
+                bot for bot in AI_CRAWLERS if rules and not rules.can_fetch(bot, site + "/")
             ],
         }
-        return Fact(NAME, "site", cfg.site, data), rules
+        return Fact(NAME, "site", site, data), rules
 
     def collect(self, cfg: ClientConfig) -> list[Fact]:
-        site_fact, rules = self._site_facts(cfg)
-        facts = [site_fact]
-        start = _clean(cfg.site + "/")
+        try:
+            return self._collect(cfg)
+        finally:
+            self._close_browser()
+
+    def _collect(self, cfg: ClientConfig) -> list[Fact]:
+        self._rendered = 0
+        site = cfg.site
+        start = _clean(site + (cfg.start_path or "/"))
+        moved: list[Fact] = []
+        # Where does the address really lead? A business that moved to its own subdomain
+        # (example.com -> shop.example.com) is scanned there; anything else is not followed.
+        site_fact, rules = self._site_facts(site)      # the site's rules come first
+        landing = self._get(start) if not rules or rules.can_fetch(USER_AGENT, start) else None
+        target = landing[0].redirected_to if landing and landing[0] is not None else ""
+        if target and not _same_host(target, site) and _related(target, site):
+            moved.append(Fact(NAME, "page", start, {
+                "linked_from": "", "status": 301, "is_html": False, "redirected_to": target}))
+            parsed = urlparse(target)
+            site, start, landing = f"{parsed.scheme}://{parsed.netloc}", _clean(target), None
+            site_fact, rules = self._site_facts(site)
+        facts = [site_fact, *moved]
+        read = 0                       # pages actually fetched; redirects and skips are free
         queue = deque([start])
         linked_from: dict[str, str] = {start: ""}
         seen = {start}
 
         def enqueue(link: str, source: str) -> None:
-            if _same_host(link, cfg.site) and link not in seen:
+            if _same_host(link, site) and link not in seen:
                 seen.add(link)
                 linked_from[link] = source
                 queue.append(link)
 
-        while queue and len(facts) - 1 < cfg.max_pages:
+        while queue and read < cfg.max_pages and len(facts) <= cfg.max_pages * 3:
             url = queue.popleft()
             if rules and not rules.can_fetch(USER_AGENT, url):
                 facts.append(Fact(NAME, "page", url, {
                     "skipped": "robots.txt", "linked_from": linked_from[url]}))
                 continue
 
-            response, elapsed, error = self._get(url)
+            if url == start and landing is not None:
+                response, elapsed, error = landing        # already fetched above
+            else:
+                response, elapsed, error = self._get(url)
             data: dict = {
                 "linked_from": linked_from[url],
                 "seconds": round(elapsed, 3),
                 "googlebot_allowed": rules.can_fetch("Googlebot", url) if rules else True,
             }
             if response is None:
+                read += 1
                 data.update(status=0, error=error)
                 facts.append(Fact(NAME, "page", url, data))
                 continue
@@ -209,12 +291,18 @@ class SiteCrawler:
                 facts.append(Fact(NAME, "page", url, data))
                 continue
 
+            read += 1
             data["status"] = response.status
             data["x_robots_tag"] = response.x_robots_tag
             is_html = "html" in response.content_type
             data["is_html"] = is_html
             if response.status == 200 and is_html:
                 data.update(parse_page(response.url, response.body, response.charset))
+                if is_shell(data):
+                    data["empty_without_browser"] = True       # what a crawler gets
+                    html = self._render(response.url)
+                    if html:
+                        data.update(parse_page(response.url, html), rendered=True)
                 for link in data["links"]:
                     enqueue(link, url)
             facts.append(Fact(NAME, "page", url, data))

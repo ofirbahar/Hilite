@@ -69,7 +69,7 @@ def ai_questions(result: RunResult) -> list[dict]:
 def render_report(cfg: ClientConfig, result: RunResult, today: date | None = None,
                   back_url: str = "", home_url: str = "") -> str:
     pages = [f for f in result.facts if f.collector == "site-crawler" and f.kind == "page"]
-    scanned = sum(1 for p in pages if p.data.get("status"))
+    scanned = sum(1 for p in pages if p.data.get("status") == 200 and p.data.get("is_html"))
     ai = summarize(cfg, result.facts)
     value = score(result.findings, ai, scanned)
     status, label = grade(value)

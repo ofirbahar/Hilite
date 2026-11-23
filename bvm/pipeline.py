@@ -27,7 +27,7 @@ class RunResult:
 
 
 def default_collectors(cfg: ClientConfig, public_only: bool = False) -> list:
-    collectors: list = [SiteCrawler(public_only=public_only)]
+    collectors: list = [SiteCrawler(public_only=public_only, render=True)]
     if cfg.buyer_questions:  # the AI check only runs when there are questions to ask
         collectors.append(AiVisibility(providers_from_env()))
     return collectors

@@ -15,8 +15,8 @@
     </div>
     <div class="field">
       <label for="site">כתובת האתר</label>
-      <input id="site" name="site" type="url" dir="ltr" required inputmode="url"
-             placeholder="https://www.example.co.il" value="{{ form.get('site', '') }}">
+      <input id="site" name="site" type="text" dir="ltr" required inputmode="url" autocapitalize="off"
+             autocomplete="url" spellcheck="false" placeholder="www.example.co.il" value="{{ form.get('site', '') }}">
     </div>
     <details class="extra"{% if form.get('competitors') or form.get('questions') %} open{% endif %}>
       <summary>להשוות למתחרים ב-AI</summary>

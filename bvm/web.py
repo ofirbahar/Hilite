@@ -11,7 +11,7 @@ from urllib.parse import urlparse
 
 from flask import Flask, abort, redirect, render_template, request, url_for
 
-from .config import ClientConfig, ConfigError, check_site_address, is_public_address
+from .config import ClientConfig, ConfigError, is_public_address, split_site_address
 from .pipeline import RunResult, default_collectors
 from .pipeline import run as run_pipeline
 from .report import render_report
@@ -81,11 +81,11 @@ def create_app(db_path: str = "bvm.sqlite3", allow_private: bool = False,
         form = request.form
         name = form.get("name", "").strip()
         error = ""
-        site = ""
+        site, start_path = "", "/"
         try:
-            site = check_site_address(form.get("site", ""))
+            site, start_path = split_site_address(form.get("site", ""))
         except ConfigError:
-            error = "כתובת האתר צריכה להיות מלאה, למשל https://www.example.com"
+            error = "זו לא כתובת של אתר. כותבים אותה כך: www.example.co.il"
         if not error and not name:
             error = "חסר שם העסק"
         if not error and not allow_private and not is_public_address(site):
@@ -94,7 +94,7 @@ def create_app(db_path: str = "bvm.sqlite3", allow_private: bool = False,
             return render_template("check.html", runs=recent_runs(), error=error, form=form), 400
 
         cfg = ClientConfig(
-            name=name, slug=_slug(site), site=site,
+            name=name, slug=_slug(site), site=site, start_path=start_path,
             competitors=_split(form.get("competitors", ""), r"[\n,]", MAX_COMPETITORS),
             buyer_questions=_split(form.get("questions", ""), r"\n", MAX_QUESTIONS),
             target_country=DEFAULT_COUNTRY,

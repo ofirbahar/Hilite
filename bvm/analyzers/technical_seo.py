@@ -8,7 +8,9 @@ fix in one line, and the technical name goes in the `tech` field.
 from __future__ import annotations
 
 from collections import defaultdict
+from urllib.parse import unquote, urlparse
 
+from ..collectors.site_crawler import is_shell
 from ..config import ClientConfig
 from ..models import Fact, Finding
 
@@ -35,6 +37,33 @@ def _count(n: int, one: str, many: str) -> str:
     return one if n == 1 else f"{n} {many}"
 
 
+def _nothing_read(pages: list[Fact]) -> Finding:
+    """The one finding for a site the scan could not read at all."""
+    first = next((p for p in pages if not p.data.get("redirected_to")), pages[0])
+    status = first.data.get("status")
+    target = urlparse(first.data.get("redirected_to") or "")
+    elsewhere = f"{target.scheme}://{target.netloc}"
+    asked_for = (urlparse(first.subject).hostname or "").removeprefix("www.")
+    if target.netloc and asked_for and asked_for in unquote(target.query):
+        # Sent to another host that carries our address along: an "are you a robot" page.
+        return Finding(NAME, "site-blocked", "לפתוח את האתר לסורקים",
+                       "האתר שלח את הבדיקה לדף אימות, ואולי גם מנועי AI.",
+                       "לבקש מבונה האתר לאפשר גישה לסורקים.", [elsewhere],
+                       5, 2, BUILDER, "הסורק הופנה לדף בדיקת בוטים")
+    if target.netloc:
+        return Finding(NAME, "site-moved", "לבדוק את הכתובת", "הכתובת מפנה לאתר אחר או לדף אימות.",
+                       "לבדוק את הכתובת, או לאפשר גישה לסורקים.", [elsewhere],
+                       5, 1, "בעל העסק", "הפניה לדומיין אחר, או דף בדיקת בוטים")
+    if first.data.get("skipped") or status in (401, 403, 429):
+        return Finding(NAME, "site-blocked", "לפתוח את האתר לסורקים",
+                       "האתר חסם את הבדיקה, ואולי גם מנועי AI.",
+                       "לבקש מבונה האתר לאפשר גישה לסורקים.", [first.subject],
+                       5, 2, BUILDER, f"הסורק נחסם (קוד {status or 'הגבלת סורקים'})")
+    return Finding(NAME, "site-unreachable", "לבדוק שהאתר עולה", "לא הצלחנו לפתוח את האתר.",
+                   "לוודא שהכתובת נכונה ושהאתר פעיל.", [first.subject],
+                   5, 2, BUILDER, f"אין תשובה תקינה ({first.data.get('error') or status})")
+
+
 class TechnicalSeo:
     name = NAME
 
@@ -49,6 +78,23 @@ class TechnicalSeo:
             if evidence or evidence is None:
                 findings.append(Finding(NAME, key, title, detail, how, list(evidence or []),
                                         impact, effort, owner, tech))
+
+        if pages and not readable:
+            # Nothing could be read, so every other check would be a guess. Say why instead.
+            return [_nothing_read(pages)]
+
+        # Pages that are an empty shell until a browser runs their code. Crawlers, AI ones
+        # included, do not run it, so for them these pages have no content at all.
+        shells = [p for p in readable if p.data.get("empty_without_browser") or is_shell(p.data)]
+        if shells and len(shells) * 2 >= len(readable):
+            add("needs-js", "להציג תוכן גם לסורקים",
+                "הדפים ריקים עד שדפדפן מריץ אותם. סורקים לא רואים תוכן.",
+                "לבקש מבונה האתר להגיש את התוכן מוכן מהשרת.",
+                [p.subject for p in shells], 5, 5, BUILDER,
+                "האתר נבנה בדפדפן (JavaScript) ואין HTML מוכן")
+            # Shells we could open in a real browser are checked like any page; the rest
+            # have nothing to check.
+            indexable = [p for p in indexable if p not in shells or p.data.get("rendered")]
 
         broken = [p for p in pages if p.data.get("status", 200) >= 400 or p.data.get("status") == 0]
         add("broken-links", "לתקן קישורים שבורים",

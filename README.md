@@ -36,6 +36,27 @@ python -m bvm run clients/acme.yaml
 
 The notebook is `bvm.sqlite3`. Command-line reports go to `reports/`.
 
+## Sites that are built in the browser
+
+Some sites send an empty page and build it with JavaScript. To read those, install the
+optional browser once:
+
+```bash
+pip install -r requirements-render.txt
+python -m playwright install chromium --only-shell
+```
+
+The scan then opens such pages in a headless browser (up to 12 per scan) and checks the
+real content. It still reports that crawlers see an empty page, because that stays true
+for search and AI crawlers. Without the browser the scan runs and reports only that.
+
+## Sites the scan cannot read
+
+A site that refuses automated visitors (an error page or an "are you a robot" check) is
+not scanned. The scanner always identifies itself by name and does not disguise itself
+as a person's browser. The report says the site blocked the check and that the site's
+builder can allow the scanner. The AI check does not need the site and still runs.
+
 ## Switching on the AI check
 
 The AI check runs only when buyer questions are entered and at least one assistant

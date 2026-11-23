@@ -25,6 +25,7 @@ class ClientConfig:
     target_country: str = "US"
     buyer_questions: list[str] = field(default_factory=list)
     approved_description: str = ""
+    start_path: str = "/"     # where the scan begins, e.g. "/il/he/" for a site in a folder
     max_pages: int = 50
     delay_seconds: float = 0.5
     slow_page_seconds: float = 2.0
@@ -54,6 +55,25 @@ def check_site_address(site: str) -> str:
     if parsed.scheme not in ("http", "https") or not parsed.netloc:
         raise ConfigError(f"'site' must be a full http(s) address, got {site!r}")
     return f"{parsed.scheme}://{parsed.netloc}"
+
+
+def split_site_address(site: str) -> tuple[str, str]:
+    """What a person types, as (site, start path). "ikea.com/il/he" is a fine answer.
+
+    A missing https:// is added. Raises ConfigError when no real host name is left.
+    """
+    site = (site or "").strip()
+    if "://" not in site:
+        site = "https://" + site
+    parsed = urlparse(site)
+    try:
+        host, _ = parsed.hostname or "", parsed.port
+    except ValueError:
+        host = ""
+    looks_real = "." in host or host == "localhost"
+    if parsed.scheme not in ("http", "https") or not looks_real or " " in parsed.netloc:
+        raise ConfigError(f"not a website address: {site!r}")
+    return f"{parsed.scheme}://{parsed.netloc}", parsed.path or "/"
 
 
 def is_public_address(site: str) -> bool:
@@ -88,6 +108,7 @@ def load_config(path: str | Path) -> ClientConfig:
         target_country=raw.get("target_country", "US"),
         buyer_questions=list(raw.get("buyer_questions") or []),
         approved_description=raw.get("approved_description", ""),
+        start_path=split_site_address(raw["site"])[1],
         max_pages=int(crawl.get("max_pages", 50)),
         delay_seconds=float(crawl.get("delay_seconds", 0.5)),
         slow_page_seconds=float(crawl.get("slow_page_seconds", 2.0)),
