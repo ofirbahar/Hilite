@@ -9,8 +9,7 @@ import re
 import time
 from collections import deque
 from dataclasses import dataclass
-from urllib.parse import urldefrag, urljoin, urlparse, urlunparse
-from urllib.robotparser import RobotFileParser
+from urllib.parse import quote, unquote, urldefrag, urljoin, urlparse, urlunparse
 
 import requests
 from bs4 import BeautifulSoup
@@ -18,6 +17,7 @@ from bs4 import BeautifulSoup
 from .. import render
 from ..config import ClientConfig, is_public_address
 from ..models import Fact
+from ..robots import Rules, looks_like_robots
 
 NAME = "site-crawler"
 USER_AGENT = "BrandVisibilityMonitor/0.1 (site audit bot)"
@@ -27,7 +27,7 @@ MAX_BYTES = 8_000_000      # never read more than this of one page; shop pages r
 MAX_REDIRECTS = 5
 MAX_RENDERED = 12          # pages opened in a real browser per scan; each takes seconds
 MAX_WAIT_SECONDS = 10      # the longest we wait when a site asks us to slow down
-SITEMAP_PATHS = ("/sitemap.xml", "/sitemap_index.xml")
+SITEMAP_PATHS = ("/sitemap.xml", "/sitemap_index.xml", "/sitemap-index.xml", "/wp-sitemap.xml")
 TRACKING = ("utm_", "fbclid=", "gclid=")  # the same page under a different address
 
 
@@ -42,6 +42,8 @@ class Fetched:
     body: bytes = b""
     charset: str | None = None  # only when the server states one
     redirected_to: str = ""     # set when the address sent us somewhere else
+    refused: bool = False       # the redirect led to a page the host closes to crawlers
+    seconds: float = 0.0        # how long the final answer took, without our own waits
 
 
 DEFAULT_PORTS = {"http": 80, "https": 443}
@@ -78,11 +80,19 @@ def _clean(url: str) -> str:
     p = urlparse(url)
     query = "&".join(part for part in p.query.split("&")
                      if part and not part.lower().startswith(TRACKING))
-    return urlunparse((p.scheme.lower(), _netloc(p), p.path or "/", p.params, query, ""))
+    # /%d7%9e, /%D7%9E and the same letters typed out are one page.
+    path = quote(unquote(p.path or "/"), safe="/:@!$&'()*+,;=-._~")
+    return urlunparse((p.scheme.lower(), _netloc(p), path, p.params, query, ""))
 
 
 # A phone number as people write it (03-555-1234, +972 50 555 1234) and a clock time (10:00).
-PHONE = re.compile(r"(?<!\d)(?:\+\d{1,3}[-\s]?\d|0\d)[\d\-\s]{6,12}\d(?!\d)")
+PHONE = re.compile(
+    r"(?<![\d-])(?:"
+    r"\*\d{4}"                                              # *2700
+    r"|\+\d{1,3}[-\s.]?(?:\(0\)[-\s.]?)?\d{1,3}(?:[-\s.]?\d{2,4}){2,3}"   # +972 (0)3 555 1234
+    r"|\(?0\d{1,2}\)?[-\s.]?\d{3}[-\s.]?(?:\d{4}|\d{2}[-\s.]?\d{2})"     # (03) 555-1234
+    r"|1[-\s]?[78]00[-\s]?\d{3}[-\s]?\d{3}"                   # 1-700-700-123
+    r")(?![\d-])")
 CLOCK_TIME = re.compile(r"(?<!\d)\d{1,2}:\d{2}(?!\d)")
 
 
@@ -114,13 +124,17 @@ def parse_page(url: str, html: str | bytes, charset: str | None = None) -> dict:
         href = a["href"].strip()
         if href.startswith(("mailto:", "tel:", "javascript:", "#")) or not href:
             continue
-        links.append(_clean(urljoin(url, href)))
+        try:
+            links.append(_clean(urljoin(url, href)))
+        except ValueError:
+            continue                    # a mistyped link must not cost the whole scan
     body_text = _text(soup.body) if soup.body else ""
     dial_link = soup.find("a", href=lambda v: v and v.strip().lower().startswith("tel:"))
     return {
         "has_phone": bool(dial_link or PHONE.search(body_text)),
         "has_hours": bool(CLOCK_TIME.search(body_text)),
-        "title": _text(soup.title),
+        # The page's own title; an <svg><title> in the body is a picture's label.
+        "title": _text(soup.head.find("title")) if soup.head else "",
         "description": (description.get("content") or "").strip() if description else "",
         "h1": [_text(h) for h in soup.find_all("h1")],
         "canonical": (canonical.get("href") or "").strip() if canonical else "",
@@ -129,7 +143,8 @@ def parse_page(url: str, html: str | bytes, charset: str | None = None) -> dict:
         "has_structured_data": bool(soup.find("script", type="application/ld+json")),
         "scripts": len(soup.find_all("script")),
         "images": len(images),
-        "images_missing_alt": sum(1 for i in images if not (i.get("alt") or "").strip()),
+        # alt="" is the correct way to mark a decorative picture; only a missing alt is a gap.
+        "images_missing_alt": sum(1 for i in images if i.get("alt") is None),
         "word_count": len(body_text.split()),
         "links": sorted(set(links)),
     }
@@ -149,6 +164,7 @@ class SiteCrawler:
         self.render = render
         self._browser = None
         self._rendered = 0
+        self._rules_by_origin: dict[str, Rules | None] = {}
 
     def _render(self, url: str) -> str | None:
         """The page after its scripts ran, or None when no browser can be used."""
@@ -168,15 +184,23 @@ class SiteCrawler:
             self._browser.__exit__()
             self._browser = None
 
-    def _get(self, url: str) -> tuple[Fetched | None, float, str]:
+    def _get(self, url: str, obey: bool = True) -> tuple[Fetched | None, float, str]:
+        """(answer, seconds the answer took, error). obey=False is for robots.txt itself."""
         started = time.monotonic()
         try:
-            fetched, error = self._fetch(url)
-        except requests.RequestException as exc:
+            fetched, error = self._fetch(url, obey)
+        except (requests.RequestException, ValueError) as exc:
             fetched, error = None, type(exc).__name__
-        return fetched, time.monotonic() - started, error
+        seconds = fetched.seconds if fetched is not None else time.monotonic() - started
+        return fetched, seconds, error
 
-    def _fetch(self, url: str) -> tuple[Fetched | None, str]:
+    def _may_fetch(self, url: str) -> bool:
+        """What the host of this address asks of crawlers. Each host is asked once a scan."""
+        parsed = urlparse(url)
+        rules = self._rules(f"{parsed.scheme}://{parsed.netloc}")
+        return rules is None or rules.can_fetch(USER_AGENT, url)
+
+    def _fetch(self, url: str, obey: bool) -> tuple[Fetched | None, str]:
         """Follow redirects by hand so every hop is checked before it is requested."""
         current = url
         waited = False
@@ -185,10 +209,21 @@ class SiteCrawler:
                 return None, "BlockedAddress"
             if self.public_only and not is_public_address(current):
                 return None, "BlockedAddress"
+            started = time.monotonic()
             with self.session.get(current, timeout=TIMEOUT, allow_redirects=False,
                                   stream=True) as response:
                 if response.is_redirect:
-                    current = urljoin(current, response.headers["Location"])
+                    target = response.headers["Location"]
+                    try:        # servers send Hebrew addresses as raw UTF-8 bytes
+                        target = target.encode("latin-1").decode("utf-8")
+                    except UnicodeError:
+                        pass
+                    target = urljoin(current, target)
+                    if obey and not self._may_fetch(target):
+                        # The site closes that page to crawlers: stop here, do not read it.
+                        return Fetched(status=response.status_code, url=current,
+                                       redirected_to=target, refused=True), ""
+                    current = target
                     continue
                 pause = response.headers.get("Retry-After", "")
                 if response.status_code in (429, 503) and pause.isdigit() and not waited:
@@ -208,32 +243,37 @@ class SiteCrawler:
                     body=body[:MAX_BYTES],
                     charset=response.encoding if "charset=" in ctype else None,
                     redirected_to="" if _clean(current) == _clean(url) else current,
+                    seconds=time.monotonic() - started,
                 ), ""
         return None, "TooManyRedirects"
 
-    def _is_file(self, url: str) -> bool:
-        """True if the address answers with a real file, not an HTML "not found" page."""
-        fetched, _, _ = self._get(url)
-        return bool(fetched is not None and fetched.status == 200
-                    and "html" not in fetched.content_type)
+    def _is_sitemap(self, url: str) -> bool:
+        """True if the address holds a real sitemap. Many sites answer 200 to anything."""
+        fetched, _, _ = self._get(url, obey=False)
+        if fetched is None or fetched.status != 200:
+            return False
+        opening = fetched.body[:4000].lower()
+        return b"<urlset" in opening or b"<sitemapindex" in opening
 
-    def _rules(self, site: str) -> RobotFileParser | None:
+    def _rules(self, site: str) -> Rules | None:
         """What the host asks of crawlers, or None when it publishes no rules."""
-        response, _, _ = self._get(site + "/robots.txt")
-        if response is None or response.status != 200 or "html" in response.content_type:
-            return None
-        rules = RobotFileParser()
-        rules.parse(response.body.decode("utf-8", errors="replace").splitlines())
-        return rules
+        if site not in self._rules_by_origin:
+            self._rules_by_origin[site] = None      # also stops a redirect loop asking again
+            response, _, _ = self._get(site + "/robots.txt", obey=False)
+            if response is not None and response.status == 200:
+                text = response.body.decode("utf-8-sig", errors="replace")   # drops a BOM
+                if looks_like_robots(text):
+                    self._rules_by_origin[site] = Rules(text)
+        return self._rules_by_origin[site]
 
-    def _site_facts(self, site: str) -> tuple[Fact, RobotFileParser | None]:
+    def _site_facts(self, site: str) -> tuple[Fact, Rules | None]:
         rules = self._rules(site)
         has_robots = rules is not None
         # A sitemap named in robots.txt counts, whatever its file name.
         declared = bool(rules and rules.site_maps())
         data = {
             "has_robots_txt": has_robots,
-            "has_sitemap": declared or any(self._is_file(site + p) for p in SITEMAP_PATHS),
+            "has_sitemap": declared or any(self._is_sitemap(site + p) for p in SITEMAP_PATHS),
             "ai_crawlers_blocked": [
                 bot for bot in AI_CRAWLERS if rules and not rules.can_fetch(bot, site + "/")
             ],
@@ -264,7 +304,9 @@ class SiteCrawler:
             return [site_fact, Fact(NAME, "page", url, data)]
         response, elapsed, error = self._get(url)
         data["seconds"] = round(elapsed, 3)
-        if response is None:
+        if response is not None and response.refused:
+            data["skipped"] = "robots.txt"            # a short link to a page closed to crawlers
+        elif response is None:
             data.update(status=0, error=error)
         else:
             is_html = "html" in response.content_type
@@ -279,6 +321,7 @@ class SiteCrawler:
 
     def _collect(self, cfg: ClientConfig) -> list[Fact]:
         self._rendered = 0
+        self._rules_by_origin = {}
         if cfg.platform:
             return self._collect_profile(cfg)
         site = cfg.site
@@ -311,7 +354,8 @@ class SiteCrawler:
             url = queue.popleft()
             if rules and not rules.can_fetch(USER_AGENT, url):
                 facts.append(Fact(NAME, "page", url, {
-                    "skipped": "robots.txt", "linked_from": linked_from[url]}))
+                    "skipped": "robots.txt", "linked_from": linked_from[url],
+                    "googlebot_allowed": rules.can_fetch("Googlebot", url)}))
                 continue
 
             if url == start and landing is not None:
@@ -348,7 +392,11 @@ class SiteCrawler:
                     data["empty_without_browser"] = True       # what a crawler gets
                     html = self._render(response.url)
                     if html:
-                        data.update(parse_page(response.url, html), rendered=True)
+                        in_browser = parse_page(response.url, html)
+                        data.update(in_browser, rendered=True)
+                        if is_shell(in_browser):
+                            # Just as small in a real browser: a short page, not a hidden one.
+                            data["small_page"] = True
                 for link in data["links"]:
                     enqueue(link, url)
             facts.append(Fact(NAME, "page", url, data))

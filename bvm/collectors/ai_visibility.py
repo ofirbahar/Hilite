@@ -53,7 +53,8 @@ class AiVisibility:
         if not questions:
             return []
         if not self.providers:
-            raise NotConfigured("no AI assistant is switched on (set an API key, see README)")
+            # Shown to the business owner in the report, so it is in their language.
+            raise NotConfigured("במערכת הזו עוד לא הוגדר עוזר AI (חסר מפתח API).")
 
         own_names = [cfg.name, *cfg.aliases]
         facts: list[Fact] = []
@@ -71,7 +72,8 @@ class AiVisibility:
                                           key=lambda c: rivals[c])
                 order = sorted([pos for pos in rivals.values() if pos is not None]
                                + ([own] if own is not None else []))
-                urls = answer.citations or URL_PATTERN.findall(answer.text)
+                urls = [u.rstrip(".,;:!?*)]}>\"'") for u in
+                        answer.citations or URL_PATTERN.findall(answer.text)]
                 facts.append(Fact(NAME, "ai_answer", question, {
                     "assistant": provider.name,
                     "answer": answer.text,

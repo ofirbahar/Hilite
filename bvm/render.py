@@ -81,7 +81,16 @@ class Browser:
 
         page = self._context.new_page()
         try:
-            page.goto(url, wait_until="domcontentloaded", timeout=GOTO_TIMEOUT_MS)
+            response = page.goto(url, wait_until="domcontentloaded", timeout=GOTO_TIMEOUT_MS)
+            # The guard above is not asked again for redirect hops, so check where the
+            # page really came from before anything of it is read.
+            hop = response.request if response is not None else None
+            came_through = [page.url]
+            while hop is not None:
+                came_through.append(hop.url)
+                hop = hop.redirected_from
+            if not all(self._allowed(address) for address in came_through):
+                return None
             try:
                 page.wait_for_load_state("networkidle", timeout=SETTLE_TIMEOUT_MS)
             except TimeoutError:

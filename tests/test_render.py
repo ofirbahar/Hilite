@@ -76,7 +76,7 @@ def test_a_browser_built_site_is_read_in_full(conf, app_site):
     assert home["h1"] == ["חנות"] and home["word_count"] >= 60
     assert home["empty_without_browser"] is True
     assert pages["/item"]["h1"] == ["פריט"]            # found through a link only the browser sees
-    assert pages["/secret"] == {"skipped": "robots.txt", "linked_from": app_site + "/"}
+    assert pages["/secret"]["skipped"] == "robots.txt"
     assert "/secret" not in Handler.hits                # the site's rules hold for the browser too
     assert all(agent == USER_AGENT for agent in Handler.agents["/"])   # it never hides who it is
 

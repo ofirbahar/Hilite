@@ -31,7 +31,10 @@ class GooglePresence:
                             "לפתוח פרופיל עסק בגוגל, בחינם, ולאמת אותו.",
                             [fact.subject], 5, 2, OWNER, "לא נמצא ב-Google Places")]
         found: list[Finding] = []
-        where = [p["maps_url"]] if p.get("maps_url") else [p.get("name") or fact.subject]
+        # Google returns its best match for the name. Naming it lets the owner see at a
+        # glance whether these numbers are about their business or a namesake.
+        named = ", ".join(part for part in (p.get("name"), p.get("address")) if part)
+        where = [item for item in (named or fact.subject, p.get("maps_url")) if item]
 
         def add(key, title, detail, how, impact, effort, tech):
             found.append(Finding(NAME, key, title, detail, how, where, impact, effort, OWNER, tech))

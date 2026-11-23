@@ -23,6 +23,7 @@ MAX_QUESTIONS = 10
 DEFAULT_COUNTRY = "IL"  # the interface is in Hebrew, so buyers are assumed to be in Israel
 # A scan nobody in this process is working on, and this old, was cut off by a restart.
 STALE_SECONDS = 600
+MAX_ACTIVE = 3   # scans at once; each one crawls, may open a browser and may cost money
 
 
 def _age_seconds(started_at: str) -> float:
@@ -80,6 +81,10 @@ def create_app(db_path: str = "bvm.sqlite3", allow_private: bool = False,
 
     @app.post("/scan")
     def scan():
+        # A form on some other site must not be able to start scans in the visitor's name.
+        origin = request.headers.get("Origin")
+        if origin and urlparse(origin).netloc != request.host:
+            abort(403)
         form = request.form
         name = form.get("name", "").strip()
         error = ""
@@ -94,6 +99,9 @@ def create_app(db_path: str = "bvm.sqlite3", allow_private: bool = False,
             error = "אי אפשר לסרוק את הכתובת הזו. צריך אתר ציבורי שזמין באינטרנט."
         if error:
             return render_template("check.html", runs=recent_runs(), error=error, form=form), 400
+        if len(active) >= MAX_ACTIVE:
+            return render_template("check.html", runs=recent_runs(), form=form,
+                                   error="כבר רצות כמה בדיקות. נסו שוב בעוד דקה."), 429
 
         platform = platform_of(site, start_path)
         cfg = ClientConfig(

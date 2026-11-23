@@ -44,7 +44,8 @@ def test_crawler_records_broken_links_and_where_they_are_linked_from(cfg, site):
 
 def test_crawler_obeys_robots_and_stays_on_the_site(cfg, site):
     pages = by_url(SiteCrawler().collect(cfg), site)
-    assert pages["/private/notes"] == {"skipped": "robots.txt", "linked_from": site + "/"}
+    assert pages["/private/notes"] == {"skipped": "robots.txt", "linked_from": site + "/",
+                                       "googlebot_allowed": False}
     assert "/private/notes" not in Handler.hits
     assert all(not url.startswith("http") for url in pages)  # nothing off-site
 
@@ -74,10 +75,11 @@ def findings(cfg):
 
 def test_analyzer_finds_the_planted_problems(findings, site):
     assert set(findings) == {
-        "broken-links", "noindex", "robots-blocked", "missing-title", "missing-description",
+        "broken-links", "check-noindex", "check-robots-blocked", "missing-title",
+        "missing-description",
         "h1", "slow-pages", "structured-data", "image-alt", "sitemap", "ai-crawlers-blocked",
     }
-    assert findings["noindex"].evidence == [site + "/pricing"]
+    assert findings["check-noindex"].evidence == [site + "/pricing"]
     assert findings["missing-title"].evidence == [site + "/about"]
     assert findings["ai-crawlers-blocked"].evidence == ["GPTBot"]
     assert site + "/missing" in findings["broken-links"].evidence[0]

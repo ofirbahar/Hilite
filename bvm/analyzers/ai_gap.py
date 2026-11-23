@@ -60,7 +60,7 @@ class AiGap:
         if gaps:
             findings.append(Finding(
                 NAME, "ai-competitor-gap", "לענות על שאלות של קונים",
-                ("בשאלה אחת" if len(gaps) == 1 else f"ב-{len(gaps)} שאלות")
+                ("בתשובה אחת" if len(gaps) == 1 else f"ב-{len(gaps)} תשובות")
                 + " ה-AI ממליץ רק על מתחרים.",
                 "לכתוב דף באתר שעונה על כל שאלה.",
                 [f"{a.subject} ({a.data.get('assistant')}): "

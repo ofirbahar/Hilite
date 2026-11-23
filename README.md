@@ -66,6 +66,23 @@ platform, and the business still gets a full report and a score from what can be
 A task whose key starts with `check-` is advice that could not be verified. It is shown
 but never costs points.
 
+## How the score is reached
+
+The report shows this under "איך חושב הציון", so the number can always be checked.
+
+- The site part starts at 100. Each measured problem costs a fixed number of points by
+  its severity (15, 9, 5, 3 or 1), once per kind of problem.
+- A task whose key starts with `check-` costs nothing. These are things that are usually
+  deliberate (inner pages hidden from Google, pages closed to crawlers) or that could not
+  be verified.
+- A home page Google cannot show (hidden, or closed to Googlebot) caps the site part at 49.
+- A site that could not be read, or a scan that was cut off, gets no score at all.
+- With an AI check, the final score is the average of the site part and the share of
+  answers that mention the business.
+
+robots.txt is read the way search engines read it (the most specific rule wins), not in
+file order, so "what Google may read" matches what Google does.
+
 ## Sites the scan cannot read
 
 A site that refuses automated visitors (an error page or an "are you a robot" check) is

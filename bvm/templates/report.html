@@ -26,7 +26,8 @@
       <summary>פרטים טכניים</summary>
       <ul>
         {% if f.tech %}<li>{{ f.tech }}</li>{% endif %}
-        {% for e in f.evidence %}<li><bdi>{{ e }}</bdi></li>{% endfor %}
+        {% for e in f.evidence[:8] %}<li><bdi>{{ e }}</bdi></li>{% endfor %}
+        {% if f.evidence|length > 8 %}<li>ועוד {{ f.evidence|length - 8 }}</li>{% endif %}
       </ul>
     </details>
     {% endif %}
@@ -80,7 +81,7 @@
             {% for item in questions %}
             <li><q>{{ item.question }}</q>
               {% for a in item.answers %}
-              <span class="ans">{% if a.mentioned %}<span class="yes">הוזכרת</span>{% else %}<span class="no">לא הוזכרת</span>{% endif %}{% if a.rivals %}. הוזכרו: {{ a.rivals|join(", ") }}{% endif %}</span>
+              <span class="ans">{{ a.assistant }}: {% if a.mentioned %}<span class="yes">הוזכרת</span>{% else %}<span class="no">לא הוזכרת</span>{% endif %}{% if a.rivals %}. הוזכרו: {{ a.rivals|join(", ") }}{% endif %}</span>
               {% endfor %}
             </li>
             {% endfor %}
@@ -98,6 +99,26 @@
       {% endif %}
     </div>
   </section>
+  {% endif %}
+
+  {% if score is not none %}
+  <details class="how">
+    <summary>איך חושב הציון</summary>
+    <div>
+      {% if scanned %}
+      <p>מתחילים מ-100. כל בעיה שנמדדה מורידה נקודות לפי החומרה שלה. משימה שמתחילה ב"לבדוק" או ב"לוודא" לא מורידה נקודות.</p>
+      <ul>
+        {% for key, title, points in lost %}<li><span>{{ title }}</span><b dir="ltr">−{{ points }}</b></li>{% endfor %}
+        {% if not lost %}<li><span>לא נמצאו בעיות שמורידות נקודות</span><b>0</b></li>{% endif %}
+        <li class="sum"><span>{{ 'ציון האתר' if ai else 'הציון' }}</span><b>{{ site_part }}</b></li>
+      </ul>
+      {% if capped %}<p>דף הבית לא נראה לגוגל, ולכן הציון לא עולה על 49.</p>{% endif %}
+      {% endif %}
+      {% if ai %}
+      <p>ה-AI הזכיר את העסק ב-{{ ai.mentioned }} מתוך {{ ai.total }} תשובות, כלומר {{ (100 * ai.mentioned / ai.total)|round|int }} מתוך 100.{% if scanned %} הציון הסופי הוא הממוצע של שני החלקים.{% endif %}</p>
+      {% endif %}
+    </div>
+  </details>
   {% endif %}
 
   {% for part, error in failures %}

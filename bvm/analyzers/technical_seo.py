@@ -10,7 +10,9 @@ from __future__ import annotations
 from collections import defaultdict
 from urllib.parse import unquote, urlparse
 
-from ..collectors.site_crawler import is_shell
+from urllib.parse import urljoin
+
+from ..collectors.site_crawler import _clean, is_shell
 from ..config import ClientConfig
 from ..models import Fact, Finding
 
@@ -27,10 +29,28 @@ def _readable(page: Fact) -> bool:
     return page.data.get("status") == 200 and page.data.get("is_html", False)
 
 
+def _header_hides_from_google(header: str) -> bool:
+    """X-Robots-Tag may address one crawler ("otherbot: noindex"); only Google's or
+    everyone's counts."""
+    for part in header.split(","):
+        crawler, _, directive = part.strip().rpartition(":")
+        if "noindex" in directive and crawler.strip() in ("", "googlebot"):
+            return True
+    return False
+
+
 def _noindex(page: Fact) -> bool:
-    return "noindex" in page.data.get("meta_robots", "") or "noindex" in page.data.get(
-        "x_robots_tag", ""
-    )
+    return ("noindex" in page.data.get("meta_robots", "")
+            or _header_hides_from_google(page.data.get("x_robots_tag", "")))
+
+
+def _identity(page: Fact) -> str:
+    """The address the page itself names as its real one, else its own address."""
+    canonical = page.data.get("canonical")
+    try:
+        return _clean(urljoin(page.subject, canonical)) if canonical else page.subject
+    except ValueError:
+        return page.subject
 
 
 def _count(n: int, one: str, many: str) -> str:
@@ -137,6 +157,8 @@ class TechnicalSeo:
         indexable = [p for p in readable if not _noindex(p)]
         site = next((f for f in facts if f.collector == "site-crawler" and f.kind == "site"), None)
         findings: list[Finding] = []
+        # The page the scan started on, after any redirect ("/" that sends you to "/he").
+        home = next((p for p in pages if not p.data.get("redirected_to")), None)
         if site is not None and site.data.get("profile"):
             google_checked = any(f.kind == "google_profile" for f in facts)
             return _business_page(site, pages, google_checked)
@@ -152,8 +174,10 @@ class TechnicalSeo:
 
         # Pages that are an empty shell until a browser runs their code. Crawlers, AI ones
         # included, do not run it, so for them these pages have no content at all.
-        shells = [p for p in readable if p.data.get("empty_without_browser") or is_shell(p.data)]
-        if shells and len(shells) * 2 >= len(readable):
+        shells = [p for p in readable if not p.data.get("small_page")
+                  and (p.data.get("empty_without_browser") or is_shell(p.data))]
+        home_is_shell = home in shells
+        if shells and (home_is_shell or len(shells) * 2 >= len(readable)):
             add("needs-js", "להציג תוכן גם לסורקים",
                 "הדפים ריקים עד שדפדפן מריץ אותם. סורקים לא רואים תוכן.",
                 "לבקש מבונה האתר להגיש את התוכן מוכן מהשרת.",
@@ -163,7 +187,9 @@ class TechnicalSeo:
             # have nothing to check.
             indexable = [p for p in indexable if p not in shells or p.data.get("rendered")]
 
-        broken = [p for p in pages if p.data.get("status", 200) >= 400 or p.data.get("status") == 0]
+        # Only a page that is really gone. A refusal (403), "slow down" (429), a server
+        # hiccup or a timeout says something about our visit, not about the link.
+        broken = [p for p in pages if p.data.get("status") in (404, 410)]
         add("broken-links", "לתקן קישורים שבורים",
             _count(len(broken), "קישור אחד מוביל", "קישורים מובילים") + " לדף שגיאה.",
             "לעדכן את הקישור לדף שקיים.",
@@ -171,19 +197,31 @@ class TechnicalSeo:
              for p in broken],
             4, 2, WRITER, "קישורים שבורים (שגיאת 404)")
 
-        blocked = [p for p in readable if _noindex(p)]
-        add("noindex", "לחשוף דפים מוסתרים",
-            _count(len(blocked), "דף אחד מוסתר", "דפים מוסתרים") + " מגוגל.",
-            "לבטל את ההסתרה בדפים שצריכים להופיע בחיפוש.",
-            [p.subject for p in blocked], 5, 1, BUILDER, "תג noindex")
+        # A hidden home page is a fault. Hidden or closed inner pages are usually deliberate
+        # (a cart, a login, search results), so they are listed to be looked at and cost
+        # no points: their keys start with "check-".
+        hidden = [p for p in readable if _noindex(p)]
+        hidden_home = [p for p in hidden if p is home]
+        add("noindex", "לחשוף את דף הבית", "דף הבית מוסתר מגוגל.",
+            "לבטל את ההסתרה בהגדרות האתר.",
+            [p.subject for p in hidden_home], 5, 1, BUILDER, "תג noindex בדף הבית")
+        hidden_inner = [p for p in hidden if p not in hidden_home]
+        add("check-noindex", "לבדוק דפים מוסתרים",
+            _count(len(hidden_inner), "דף אחד מוסתר", "דפים מוסתרים") + " מגוגל.",
+            "לבטל את ההסתרה, אם היא לא מכוונת.",
+            [p.subject for p in hidden_inner], 2, 1, BUILDER, "תג noindex (לא נכלל בציון)")
 
-        robots_blocked = [p for p in pages
-                          if p.data.get("skipped") == "robots.txt"
-                          or p.data.get("googlebot_allowed") is False]
-        add("robots-blocked", "לפתוח דפים חסומים",
-            _count(len(robots_blocked), "דף אחד חסום", "דפים חסומים") + " לגוגל.",
+        closed = [p for p in pages if p.data.get("googlebot_allowed") is False]
+        closed_home = [p for p in closed if p is home]
+        add("home-closed-to-google", "לפתוח את האתר לגוגל", "דף הבית חסום לגוגל.",
+            "להסיר את החסימה בהגדרות האתר.",
+            [p.subject for p in closed_home], 5, 1, BUILDER, "חסימת Googlebot בקובץ robots.txt")
+        closed = [p for p in closed if p not in closed_home]
+        add("check-robots-blocked", "לבדוק דפים חסומים",
+            _count(len(closed), "דף אחד חסום", "דפים חסומים") + " לגוגל.",
             "להסיר את החסימה, אם היא לא מכוונת.",
-            [p.subject for p in robots_blocked], 5, 1, BUILDER, "חסימה בקובץ robots.txt")
+            [p.subject for p in closed], 2, 1, BUILDER,
+            "חסימה לגוגל בקובץ robots.txt (לא נכלל בציון)")
 
         no_title = [p for p in indexable if not p.data.get("title")]
         add("missing-title", "להוסיף כותרות לדפים",
@@ -197,11 +235,14 @@ class TechnicalSeo:
             "לכתוב לכל דף משפט שמסביר מה יש בו.",
             [p.subject for p in no_desc], 3, 1, WRITER, "תג meta description חסר")
 
-        by_title: dict[str, list[str]] = defaultdict(list)
+        # Two addresses that name the same real page (a list and the same list sorted)
+        # are one page, so they are not "two pages with one title".
+        by_title: dict[str, set[str]] = defaultdict(set)
         for p in indexable:
             if p.data.get("title"):
-                by_title[p.data["title"]].append(p.subject)
-        duplicates = [f'"{t}": {", ".join(urls)}' for t, urls in by_title.items() if len(urls) > 1]
+                by_title[p.data["title"]].add(_identity(p))
+        duplicates = [f'"{t}": {", ".join(sorted(urls))}'
+                      for t, urls in by_title.items() if len(urls) > 1]
         add("duplicate-title", "לתת לכל דף כותרת משלו",
             "כמה דפים נושאים את אותה כותרת.",
             "לשנות את הכותרות כך שכל אחת תהיה שונה.",
@@ -239,7 +280,7 @@ class TechnicalSeo:
         if site is not None:
             if not site.data.get("has_sitemap"):
                 add("sitemap", "לשלוח לגוגל רשימת דפים",
-                    "לאתר אין רשימת דפים למנועי חיפוש.",
+                    "לא מצאנו באתר רשימת דפים למנועי חיפוש.",
                     "לייצר את הרשימה ולהגיש אותה לגוגל.",
                     None, 3, 1, BUILDER, "קובץ sitemap.xml חסר")
             blocked_bots = site.data.get("ai_crawlers_blocked") or []

@@ -49,6 +49,7 @@ class Handler(BaseHTTPRequestHandler):
             return
         pages = {
             "/": ("text/html", HOME.encode()),
+            "/sitemap_index.xml": ("application/octet-stream", b"this is not a sitemap"),
             "/busy": ("text/html", PAGE.format(t="Busy", links="").encode()),
             "/new": ("text/html", PAGE.format(t="New", links="").encode()),
             "/inside": ("text/html", PAGE.format(t="Inside", links="").encode()),
@@ -187,7 +188,7 @@ def test_address_without_a_scheme_is_accepted_and_keeps_its_path():
     from bvm.config import split_site_address
     assert split_site_address("ynet.co.il") == ("https://ynet.co.il", "/")
     assert split_site_address(" www.ikea.com/il/he/ ") == ("https://www.ikea.com", "/il/he/")
-    assert split_site_address("http://a.test:8080/shop?x=1") == ("http://a.test:8080", "/shop")
+    assert split_site_address("http://a.test:8080/shop?x=1") == ("http://a.test:8080", "/shop?x=1")
     for bad in ("", "not a url", "ftp://a.test", "https://"):
         with pytest.raises(ConfigError):
             split_site_address(bad)

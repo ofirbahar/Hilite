@@ -75,7 +75,9 @@ def split_site_address(site: str) -> tuple[str, str]:
     looks_real = "." in host or host == "localhost"
     if parsed.scheme not in ("http", "https") or not looks_real or " " in parsed.netloc:
         raise ConfigError(f"not a website address: {site!r}")
-    return f"{parsed.scheme}://{parsed.netloc}", parsed.path or "/"
+    # The query stays: on some platforms it is what names the page (profile.php?id=...).
+    start = (parsed.path or "/") + ("?" + parsed.query if parsed.query else "")
+    return f"{parsed.scheme}://{parsed.netloc}", start
 
 
 # Places where a business without its own site keeps a page: host -> (name, path it must
