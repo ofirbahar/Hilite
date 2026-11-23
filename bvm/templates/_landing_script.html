@@ -32,7 +32,26 @@
     demo.querySelector('.ring .value').addEventListener('animationstart', count);
     demo.querySelector('.mini li:last-child').addEventListener('animationend', function () { again.hidden = false; });
     again.addEventListener('click', play);
-    play();
+  }
+  /* The entrance and the demo start only once the browser is really drawing frames. If it
+     is not (a background tab, a viewer that holds animations), everything simply shows in
+     its finished state after a moment, so the first screen is never left empty. */
+  var root = document.documentElement, begun = false;
+  function begin() {
+    if (begun) return;
+    begun = true;
+    root.classList.add('go');
+    if (demo) play();
+  }
+  if (still) { begun = true; root.classList.add('shown'); }
+  else {
+    requestAnimationFrame(function () { requestAnimationFrame(begin); });
+    setTimeout(function () {
+      if (begun) return;
+      begun = true;
+      root.classList.add('shown');
+      if (again) again.hidden = false;
+    }, 1200);
   }
 
   /* 2. The statement: words light up as the reader scrolls through them. */
