@@ -490,3 +490,13 @@ def test_old_checks_are_scored_again_from_what_was_collected(tmp_path):
     assert store.get_run(failed)["score"] is None                        # a failed check stays so
     assert store.previous_run("acme", before=99, scoring=SCORING)["id"] == run_id
     assert "0" in CliRunner().invoke(main, ["rescore", "--db", path]).output   # nothing left to do
+
+
+def test_a_mistyped_address_is_called_a_typing_mistake_not_a_forbidden_address(tmp_path):
+    client = create_app(str(tmp_path / "w.sqlite3"), background=False,
+                        collectors=lambda cfg: []).test_client()
+    typo = client.post("/scan", data={"name": "Acme", "site": "no-such-site.invalid"})
+    assert typo.status_code == 400 and "שגיאת הקלדה" in typo.get_data(as_text=True)
+    inner = client.post("/scan", data={"name": "Acme", "site": "http://127.0.0.1"})
+    assert inner.status_code == 400 and "אתר ציבורי" in inner.get_data(as_text=True)
+    assert 'value="no-such-site.invalid"' in typo.get_data(as_text=True)   # nothing to retype

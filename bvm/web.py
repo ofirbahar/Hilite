@@ -14,7 +14,7 @@ from urllib.parse import urlparse
 
 from flask import Flask, abort, redirect, render_template, request, url_for
 
-from .config import (ClientConfig, ConfigError, is_public_address, platform_of,
+from .config import (ClientConfig, ConfigError, exists, is_public_address, platform_of,
                      split_site_address)
 from .pipeline import RunResult, default_collectors
 from .pipeline import run as run_pipeline
@@ -149,6 +149,8 @@ def create_app(db_path: str = "bvm.sqlite3", allow_private: bool = False,
             error = "זו לא כתובת של אתר. כותבים אותה כך: www.example.co.il"
         if not error and not name:
             error = "חסר שם העסק"
+        if not error and not allow_private and not exists(site):
+            error = "לא מצאנו אתר בכתובת הזו. כדאי לבדוק שאין בה שגיאת הקלדה."
         if not error and not allow_private and not is_public_address(site):
             error = "אי אפשר לסרוק את הכתובת הזו. צריך אתר ציבורי שזמין באינטרנט."
         if error:

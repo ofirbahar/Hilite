@@ -130,6 +130,15 @@ def is_public_address(site: str) -> bool:
     return bool(infos) and all(ipaddress.ip_address(i[4][0]).is_global for i in infos)
 
 
+def exists(site: str) -> bool:
+    """Does the address lead anywhere at all? False for a name no server answers to,
+    which for a business owner nearly always means a typing mistake."""
+    try:
+        return bool(socket.getaddrinfo(urlparse(site).hostname or "", None))
+    except (socket.gaierror, UnicodeError):
+        return False
+
+
 def load_config(path: str | Path) -> ClientConfig:
     raw = yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
     for required in ("name", "slug", "site"):
