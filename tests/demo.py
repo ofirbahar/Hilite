@@ -107,11 +107,16 @@ def main(out_dir: str) -> None:
     # The demo has no server to ask, so the waiting screen's polling script is left out.
     waiting_body = re.sub(r"<script>.*?</script>", "", _body(waiting), flags=re.S)
     waiting_body = waiting_body.replace("בודקים את Acme", 'בודקים את <span data-biz>Acme</span>')
+    # Nothing is scanned here, and every visitor gets the same sample report. Say so where
+    # it cannot be missed, so the fixed score is never taken for a real result.
+    note = ('<p role="note" style="margin:0;padding:12px 20px;background:var(--mark);color:var(--ink);'
+            'font-weight:600;text-align:center">זו הדגמה בלבד. שום אתר לא נסרק כאן, והציון והמשימות '
+            'קבועים לכל עסק.</p>')
     page = (head + "</head>\n<body>\n" + bar
             + '\n<div data-view="home">' + _body(landing) + "</div>"
-            + '\n<div data-view="check" hidden>' + _body(check) + "</div>"
-            + '\n<div data-view="waiting" hidden>' + waiting_body + "</div>"
-            + '\n<div data-view="report" hidden>' + report_body + "</div>"
+            + '\n<div data-view="check" hidden>' + note + _body(check) + "</div>"
+            + '\n<div data-view="waiting" hidden>' + note + waiting_body + "</div>"
+            + '\n<div data-view="report" hidden>' + note + report_body + "</div>"
             + SCRIPT + "</body>\n</html>\n")
     page = page.replace('href="/check"', 'href="#check"').replace('href="/"', 'href="#home"')
     (out / "site-demo.html").write_text(page, encoding="utf-8")
