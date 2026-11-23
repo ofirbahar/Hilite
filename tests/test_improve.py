@@ -2,6 +2,8 @@
 that shows what changed, a way to delete a check, and an address to write to."""
 from __future__ import annotations
 
+import re
+
 import pytest
 
 from bvm.analyzers.google_presence import GooglePresence
@@ -263,7 +265,7 @@ def test_only_the_owner_link_can_delete(app_client, tmp_path):
     assert "למחוק לצמיתות" not in shared and key not in shared          # the plain link only reads
     mine = app_client.get(owner).get_data(as_text=True)
     assert "למחוק לצמיתות" in mine and "אי אפשר לשחזר" in mine
-    assert '<bdi data-share="/runs/1">http://localhost/runs/1</bdi>' in mine                  # the address to pass on
+    assert re.search(r'<bdi data-share="/runs/1\?v=[\w-]+">http://localhost/runs/1\?v=[\w-]+</bdi>', mine)
 
     assert app_client.post("/runs/1/delete").status_code == 403
     assert app_client.post("/runs/1/delete?key=wrong").status_code == 403
@@ -434,7 +436,7 @@ def test_two_requests_that_upgrade_an_old_notebook_together_both_succeed(tmp_pat
 
 def test_the_address_to_pass_on_is_the_one_the_visitor_is_really_on(app_client):
     html = app_client.get(start(app_client)).get_data(as_text=True)
-    assert 'data-share="/runs/1"' in html and "location.origin" in html
+    assert 'data-share="/runs/1?v=' in html and "location.origin" in html
 
 
 # --- checks made before personal links and before the new score ------------------------

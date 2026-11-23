@@ -177,7 +177,7 @@ def test_scan_cut_off_by_a_restart_is_marked_failed(tmp_path):
     store.db.execute("UPDATE runs SET started_at = '2020-01-01T00:00:00+00:00'")
     store.db.commit()
     client = create_app(db).test_client()
-    page = client.get(f"/runs/{run_id}").get_data(as_text=True)
+    page = client.get(f"/runs/{run_id}?v={store.ensure_view(run_id)}").get_data(as_text=True)
     assert 'http-equiv="refresh"' not in page and "נקטעה" in page
     assert store.get_run(run_id)["status"] == "failed"
 

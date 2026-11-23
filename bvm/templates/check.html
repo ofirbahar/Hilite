@@ -9,6 +9,10 @@
 
   {% if deleted %}<p class="done" role="status">הבדיקה נמחקה.</p>
   <script>/* Said once: a refresh or a bookmark of this page must not say it again. */
+  try {
+    localStorage.setItem('hilite-checks', JSON.stringify(JSON.parse(
+      localStorage.getItem('hilite-checks') || '[]').filter(function (check) { return check.id !== {{ deleted }}; })));
+  } catch (error) {}
   if (window.history && history.replaceState) history.replaceState(null, '', location.pathname);</script>{% endif %}
 
   <form method="post" action="{{ url_for('scan') }}">
@@ -16,7 +20,7 @@
     <div class="field">
       <label for="site">כתובת האתר או דף העסק</label>
       <input id="site" name="site" type="text" dir="ltr" required inputmode="url" autocapitalize="off"
-             autocomplete="url" spellcheck="false" placeholder="www.example.co.il" value="{{ form.get('site', '') }}">
+             autocomplete="url" spellcheck="false" maxlength="2000" placeholder="www.example.co.il" value="{{ form.get('site', '') }}">
     </div>
     <p class="hint">אין אתר? אפשר להזין דף פייסבוק, אינסטגרם, Wolt או גוגל מפות.</p>
     <details class="extra"{% if form.get('name') or form.get('city') or form.get('competitors') or form.get('questions') %} open{% endif %}>
@@ -41,7 +45,7 @@
                   placeholder="מה המסעדה הכי טובה באזור?">{{ form.get('questions', '') }}</textarea>
       </div>
     </details>
-    <button class="btn" type="submit">בדוק את העסק</button>
+    <button class="btn" type="submit" data-once>בדוק את העסק</button>
     <p class="hint consent">בלחיצה על הכפתור נסרוק את הכתובת שהזנת ונשמור את התוצאה. <a href="{{ url_for('privacy') }}">מה אנחנו שומרים</a></p>
   </form>
 
@@ -58,6 +62,39 @@
       {% endfor %}
     </ul>
   </section>
+  {% elif own_list %}
+  {# A real visitor sees only the checks made from this browser. The list lives on the
+     device (see report.html) and is drawn here; the server never learns it. #}
+  <section class="block" id="my-checks" hidden>
+    <h2>הבדיקות שלך במכשיר הזה</h2>
+    <ul class="rows runs"></ul>
+  </section>
+  <script>
+  (function () {
+    var mine = [];
+    try { mine = JSON.parse(localStorage.getItem('hilite-checks') || '[]'); } catch (error) {}
+    var box = document.getElementById('my-checks');
+    var list = box.querySelector('ul');
+    mine.forEach(function (check) {
+      if (!check || typeof check.url !== 'string' || check.url.indexOf('/runs/') !== 0) return;
+      var item = document.createElement('li');
+      var link = document.createElement('a');
+      link.href = check.url;
+      var name = document.createElement('b');
+      name.textContent = String(check.name || '');
+      var when = document.createElement('span');
+      var date = document.createElement('bdi');
+      date.textContent = String(check.date || '');
+      when.appendChild(date);
+      link.appendChild(name);
+      link.appendChild(when);
+      link.insertAdjacentHTML('beforeend', '<svg class="ico" viewBox="0 0 14 14" aria-hidden="true"><path d="M9 2.5L4.5 7 9 11.5"/></svg>');
+      item.appendChild(link);
+      list.appendChild(item);
+    });
+    box.hidden = !list.children.length;
+  })();
+  </script>
   {% endif %}
 </main>
 {% endblock %}

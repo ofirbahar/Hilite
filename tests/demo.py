@@ -100,8 +100,7 @@ def main(out_dir: str) -> None:
     store.close()
     waiting = client.get(f"/runs/{waiting_id}").get_data(as_text=True)
 
-    head = landing.split("</head>", 1)[0].replace(
-        "<title>Brand Visibility Monitor</title>", "<title>Brand Visibility Monitor</title>")
+    head = landing.split("</head>", 1)[0]
     bar = landing.split("<body>", 1)[1].split("</header>", 1)[0] + "</header>"
     report = re.sub(r'<section class="after">.*?</section>', "", report, flags=re.S)
     report_body = (_body(report)

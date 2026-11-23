@@ -226,7 +226,7 @@ def test_web_shows_waiting_page_while_running_and_marks_crashes(tmp_path):
     store = Store(db)
     run_id = store.start_run("acme", ClientConfig("Acme", "acme", "https://acme.test").to_dict())
     client = create_app(db).test_client()
-    waiting = client.get(f"/runs/{run_id}").get_data(as_text=True)
+    waiting = client.get(f"/runs/{run_id}?v={store.ensure_view(run_id)}").get_data(as_text=True)
     assert "בודקים את Acme" in waiting and 'http-equiv="refresh"' in waiting
 
     def exploding(cfg):

@@ -148,7 +148,7 @@
   {% if again_url %}
   <section class="after">
     <form method="post" action="{{ again_url }}">
-      <button class="btn" type="submit">בדוק שוב</button>
+      <button class="btn" type="submit" data-once>בדוק שוב</button>
     </form>
     <p class="note">תיקנת משהו? בדיקה חוזרת תראה מה השתנה בציון ובמשימות.</p>
     {% if delete_url %}
@@ -156,7 +156,7 @@
       <summary>מחיקת הבדיקה</summary>
       <form method="post" action="{{ delete_url }}">
         <p>הדוח וכל מה שנאסף בבדיקה הזו יימחקו. אי אפשר לשחזר.</p>
-        <button class="btn danger" type="submit">למחוק לצמיתות</button>
+        <button class="btn danger" type="submit" data-once>למחוק לצמיתות</button>
       </form>
     </details>
     <p class="note">הכתובת של העמוד הזה היא הקישור האישי שלך. רק ממנה אפשר למחוק את הבדיקה, אז כדאי לשמור אותה ולא להעביר אותה הלאה.</p>
@@ -165,6 +165,21 @@
   </section>
   {% endif %}
 </main>
+{% include "_once.html" %}
+{% if remember %}
+<script>
+/* This browser's own list of checks. It stays on the device and is never sent to us. */
+(function () {
+  try {
+    var mine = JSON.parse(localStorage.getItem('hilite-checks') || '[]')
+      .filter(function (check) { return check.id !== {{ remember.id }}; });
+    mine.unshift({ id: {{ remember.id }}, name: {{ remember.name|tojson }},
+                   date: {{ remember.date|tojson }}, url: location.pathname + location.search });
+    localStorage.setItem('hilite-checks', JSON.stringify(mine.slice(0, 20)));
+  } catch (error) { /* storage is off: the personal link still works */ }
+})();
+</script>
+{% endif %}
 {% if share_path %}
 <script>
 /* The server may sit behind another address. The browser knows the one the visitor is on. */

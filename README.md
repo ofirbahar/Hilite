@@ -1,6 +1,5 @@
 # Hilite
 
-Brand Visibility Monitor.
 
 Checks how a company shows up online, finds what needs fixing, and tells a person what to do next.
 
@@ -141,10 +140,20 @@ checked, at the plain address, and the report's first tasks include fixing the c
   two checks are compared only when the same version of the formula scored both and both
   measured the same things (site, Google profile, AI answers). Otherwise the score would
   move for a reason that is not the owner's doing.
-- **Delete.** A check opens on a personal link (`/runs/12?key=...`). Only that link shows
-  "מחיקת הבדיקה", which removes the report and everything collected for it. The plain
-  address (`/runs/12`) only reads, and is the one to share. There are no accounts and no
+- **Who can open a report.** A report opens only with one of its two secret links: the
+  personal link the check ends on (`/runs/12?key=...`), and a read-only link the report
+  shows for passing on (`/runs/12?v=...`). The bare number (`/runs/12`) opens nothing, and
+  nobody's checks are listed. The form shows the checks made from this browser, from a list
+  the browser keeps on the device. `--allow-private` is development mode: reports open by
+  number and all checks are listed.
+- **Delete.** Only the personal link shows "מחיקת הבדיקה", which removes the report and
+  everything collected for it. There are no accounts and no
   cookies; the key is the whole permission, and it is never listed or sent to other sites.
+- **Limits and protection.** One visitor may start 10 checks in 10 minutes, three checks
+  run at once, a second press on a button does nothing, pages cannot be framed and load
+  nothing from other sites, reports are marked noindex and no-store, and the secrets in
+  links are kept out of the server log. Behind a proxy, pass the visitor's real address
+  to the app (ProxyFix), or the limit counts everyone as one visitor.
 - **Deleting for someone who lost their link:** `python -m bvm delete 12`.
 - **Checks made before personal links existed:** `python -m bvm link 12` prints a personal
   link for check 12, creating one if it has none.

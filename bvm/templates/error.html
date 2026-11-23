@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} | Hilite{% endblock %}
+{% block body %}
+<main class="page" id="main">
+  <div class="hello">
+    <h1>{{ title }}</h1>
+    <p>{{ text }}</p>
+  </div>
+  <p><a class="btn" href="{{ url_for('check') }}">לבדיקה חדשה</a></p>
+</main>
+{% endblock %}

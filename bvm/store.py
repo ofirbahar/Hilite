@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS runs (
     config TEXT NOT NULL DEFAULT '{}',
     score INTEGER,
     scoring INTEGER,
-    key TEXT
+    key TEXT,
+    view TEXT
 );
 CREATE TABLE IF NOT EXISTS facts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -62,6 +63,7 @@ ADDED = [
     ("runs", "score", "INTEGER"),        # the score the report showed, saved when the run ended
     ("runs", "scoring", "INTEGER"),      # which version of the formula gave that score
     ("runs", "key", "TEXT"),             # the owner's secret: whoever has it may delete the run
+    ("runs", "view", "TEXT"),            # the reader's secret: whoever has it may read the report
     ("findings", "affected", "INTEGER NOT NULL DEFAULT 0"),
     ("findings", "total", "INTEGER NOT NULL DEFAULT 0"),
 ]
@@ -91,10 +93,11 @@ class Store:
                         raise
         self.db.commit()
 
-    def start_run(self, client: str, config: dict | None = None, key: str | None = None) -> int:
+    def start_run(self, client: str, config: dict | None = None, key: str | None = None,
+                  view: str | None = None) -> int:
         cur = self.db.execute(
-            "INSERT INTO runs (client, started_at, config, key) VALUES (?, ?, ?, ?)",
-            (client, _now(), json.dumps(config or {}, ensure_ascii=False), key),
+            "INSERT INTO runs (client, started_at, config, key, view) VALUES (?, ?, ?, ?, ?)",
+            (client, _now(), json.dumps(config or {}, ensure_ascii=False), key, view),
         )
         self.db.commit()
         return cur.lastrowid
@@ -119,18 +122,25 @@ class Store:
             (client, before, scoring, scoring)).fetchone()
         return dict(row) if row else None
 
-    def ensure_key(self, run_id: int) -> str | None:
-        """The run's secret, made now if the run was started before there were secrets.
-        None when there is no such run."""
-        row = self.db.execute("SELECT key FROM runs WHERE id = ?", (run_id,)).fetchone()
+    def _ensure(self, run_id: int, column: str, size: int) -> str | None:
+        row = self.db.execute(f"SELECT {column} FROM runs WHERE id = ?", (run_id,)).fetchone()
         if row is None:
             return None
-        if row["key"]:
-            return row["key"]
-        key = secrets.token_urlsafe(24)
-        self.db.execute("UPDATE runs SET key = ? WHERE id = ?", (key, run_id))
+        if row[column]:
+            return row[column]
+        secret = secrets.token_urlsafe(size)
+        self.db.execute(f"UPDATE runs SET {column} = ? WHERE id = ?", (secret, run_id))
         self.db.commit()
-        return key
+        return secret
+
+    def ensure_key(self, run_id: int) -> str | None:
+        """The owner's secret, made now if the run was started before there were secrets.
+        None when there is no such run."""
+        return self._ensure(run_id, "key", 24)
+
+    def ensure_view(self, run_id: int) -> str | None:
+        """The reader's secret (see ensure_key)."""
+        return self._ensure(run_id, "view", 18)
 
     def unscored(self, scoring: int) -> list[int]:
         """Finished checks that were scored by another version of the formula, or not at all."""

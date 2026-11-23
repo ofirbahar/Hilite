@@ -21,7 +21,7 @@ from ..models import Fact
 from ..robots import Rules, looks_like_robots
 
 NAME = "site-crawler"
-USER_AGENT = "BrandVisibilityMonitor/0.1 (site audit bot)"
+USER_AGENT = "HiliteBot/1.0 (site check; identifies itself and obeys robots.txt)"
 AI_CRAWLERS = ["GPTBot", "ClaudeBot", "PerplexityBot", "Google-Extended"]
 TIMEOUT = 15
 MAX_BYTES = 8_000_000      # never read more than this of one page; shop pages run to megabytes

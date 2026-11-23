@@ -161,9 +161,9 @@ def test_the_form_shows_one_field_and_keeps_the_rest_folded(tmp_path):
 
 def test_while_checking_the_address_stands_in_for_the_name(tmp_path):
     store = Store(tmp_path / "w.sqlite3")
-    store.start_run("acme", ClientConfig("", "acme", "https://acme.test").to_dict())
+    store.start_run("acme", ClientConfig("", "acme", "https://acme.test").to_dict(), view="readme")
     store.close()
-    html = create_app(str(tmp_path / "w.sqlite3")).test_client().get("/runs/1").get_data(as_text=True)
+    html = create_app(str(tmp_path / "w.sqlite3")).test_client().get("/runs/1?v=readme").get_data(as_text=True)
     assert "בודקים את <bdi>acme.test</bdi>" in html
 
 

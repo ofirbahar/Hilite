@@ -11,7 +11,7 @@ from .store import Store
 
 @click.group()
 def main() -> None:
-    """Brand Visibility Monitor."""
+    """Hilite: check how a business looks to Google and to AI assistants."""
 
 
 @main.command()
@@ -58,18 +58,20 @@ def delete(run_id: int, db: str) -> None:
 @click.argument("run_id", type=int)
 @click.option("--db", default="bvm.sqlite3", show_default=True, help="Notebook database file.")
 def link(run_id: int, db: str) -> None:
-    """Print the personal link of a check: the one address that can delete it.
+    """Print the two links of a check: the read-only one, and the personal one that can
+    also delete it.
 
-    A check made before personal links existed gets one now. Add the site's own address
-    in front (https://your-site/...) before sending it to the owner.
+    A check made before links existed gets them now. Add the site's own address in front
+    (https://your-site/...) before sending one to the owner.
     """
     store = Store(db)
     try:
-        key = store.ensure_key(run_id)
+        key, view = store.ensure_key(run_id), store.ensure_view(run_id)
     finally:
         store.close()
     if key is None:
         raise click.ClickException(f"There is no check number {run_id}.")
+    click.echo(f"Read-only link of check {run_id}: /runs/{run_id}?v={view}")
     click.echo(f"Personal link of check {run_id}: /runs/{run_id}?key={key}")
 
 
