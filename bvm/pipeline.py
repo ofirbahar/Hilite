@@ -10,8 +10,10 @@ from dataclasses import dataclass, field
 
 from .ai_providers import providers_from_env
 from .analyzers.ai_gap import AiGap
+from .analyzers.google_presence import GooglePresence
 from .analyzers.technical_seo import TechnicalSeo
 from .collectors.ai_visibility import AiVisibility
+from .collectors.google_profile import profile_from_env
 from .collectors.site_crawler import SiteCrawler
 from .config import ClientConfig
 from .models import Fact, Finding
@@ -28,13 +30,16 @@ class RunResult:
 
 def default_collectors(cfg: ClientConfig, public_only: bool = False) -> list:
     collectors: list = [SiteCrawler(public_only=public_only, render=True)]
+    google = profile_from_env()  # the Google profile check runs only when its key is set
+    if google is not None:
+        collectors.append(google)
     if cfg.buyer_questions:  # the AI check only runs when there are questions to ask
         collectors.append(AiVisibility(providers_from_env()))
     return collectors
 
 
 def default_analyzers() -> list:
-    return [TechnicalSeo(), AiGap()]
+    return [TechnicalSeo(), GooglePresence(), AiGap()]
 
 
 def run(cfg: ClientConfig, store: Store, collectors=None, analyzers=None,

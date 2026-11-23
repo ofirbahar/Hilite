@@ -17,11 +17,16 @@ PART_NAMES = {
     "site-crawler": "סריקת האתר",
     "ai-visibility": "בדיקת ה-AI",
     "technical-seo": "ניתוח האתר",
+    "google-profile": "בדיקת הפרופיל בגוגל",
+    "google-presence": "ניתוח הפרופיל בגוגל",
     "ai-gap": "ניתוח תשובות ה-AI",
     "pipeline": "הבדיקה",
 }
 # How many points one site problem costs, by its impact (5 = critical).
 PENALTY = {5: 15, 4: 9, 3: 5, 2: 3, 1: 1}
+# Whose findings count: what we measured on the web. A task whose key starts with "check-"
+# is advice we could not verify, so it never costs points.
+SCORED = ("technical-seo", "google-presence")
 
 _env = Environment(
     loader=FileSystemLoader(Path(__file__).parent / "templates"),
@@ -36,7 +41,8 @@ def score(findings: list[Finding], ai: dict | None, scanned: int) -> int | None:
     """
     if not scanned and not ai:
         return None
-    site = max(0, 100 - sum(PENALTY[f.impact] for f in findings if f.analyzer == "technical-seo"))
+    measured = [f for f in findings if f.analyzer in SCORED and not f.key.startswith("check-")]
+    site = max(0, 100 - sum(PENALTY[f.impact] for f in measured))
     if not ai:
         return site
     ai_part = round(100 * ai["mentioned"] / ai["total"])
@@ -69,7 +75,11 @@ def ai_questions(result: RunResult) -> list[dict]:
 def render_report(cfg: ClientConfig, result: RunResult, today: date | None = None,
                   back_url: str = "", home_url: str = "") -> str:
     pages = [f for f in result.facts if f.collector == "site-crawler" and f.kind == "page"]
+    # What was measured: pages read, a business page on a platform (its rules are always
+    # readable), or a Google profile lookup. Any of them is enough for a score.
     scanned = sum(1 for p in pages if p.data.get("status") == 200 and p.data.get("is_html"))
+    scanned += sum(1 for f in result.facts
+                   if f.kind == "google_profile" or (f.kind == "site" and f.data.get("profile")))
     ai = summarize(cfg, result.facts)
     value = score(result.findings, ai, scanned)
     status, label = grade(value)

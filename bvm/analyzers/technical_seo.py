@@ -64,6 +64,70 @@ def _nothing_read(pages: list[Fact]) -> Finding:
                    5, 2, BUILDER, f"אין תשובה תקינה ({first.data.get('error') or status})")
 
 
+OWNER = "בעל העסק"
+THIN_PAGE_WORDS = 50
+
+
+def _business_page(site: Fact, pages: list[Fact], google_checked: bool) -> list[Finding]:
+    """The check for a business whose address is a page on someone else's platform.
+
+    Everything here is measured: the platform's published rules for AI engines, and what
+    the page itself says. The one unmeasured task is marked as such and costs no points.
+    """
+    platform = site.data["profile"]
+    at = ("ב-" if platform.isascii() else "ב") + platform
+    page = pages[0] if pages else None
+    found: list[Finding] = []
+
+    def add(key, title, detail, how, evidence, impact, effort, owner, tech):
+        found.append(Finding(NAME, key, title, detail, how, evidence, impact, effort, owner, tech))
+
+    closed_to = site.data.get("ai_crawlers_blocked") or []
+    refused = bool(page and page.data.get("skipped"))
+    if closed_to or refused:
+        add("profile-closed-to-ai", "לפרסם את העסק במקום פתוח",
+            f"הדף {at} סגור למנועי AI, והם לא קוראים אותו.",
+            "לפתוח אתר או פרופיל בגוגל עם פרטי העסק.", closed_to or [site.subject],
+            5, 3, OWNER, "כללי הסורקים של הפלטפורמה חוסמים את הדף")
+    if page and not refused:
+        if page.data.get("status") in (401, 403, 429):
+            # The platform turned our reader away. That says nothing about the business,
+            # so it is a task to do by hand and costs no points.
+            add("check-page-by-hand", "לבדוק את הדף ידנית", "הפלטפורמה חסמה את הבדיקה שלנו לדף.",
+                "לוודא שיש בדף תיאור, שעות, טלפון וכתובת.", [page.subject], 3, 1, OWNER,
+                f"הסורק נחסם (קוד {page.data['status']}), לא נכלל בציון")
+        elif not _readable(page):
+            add("profile-unreachable", "לבדוק את כתובת הדף", "לא הצלחנו לפתוח את דף העסק.",
+                "לוודא שהכתובת נכונה ושהדף ציבורי.", [page.subject], 5, 2, OWNER,
+                f"אין תשובה תקינה ({page.data.get('error') or page.data.get('status')})")
+        else:
+            if _noindex(page):
+                add("profile-hidden", "להפוך את הדף לציבורי", "הדף מסומן כמוסתר ממנועי חיפוש.",
+                    "לבדוק בהגדרות הדף שהוא פתוח לכולם.", [page.subject], 5, 2, OWNER,
+                    "תג noindex בדף העסק")
+            if page.data.get("word_count", 0) < THIN_PAGE_WORDS:
+                add("profile-thin", "להוסיף פרטים לדף העסק", "בדף יש מעט מאוד מידע על העסק.",
+                    "להוסיף תיאור, כתובת, שעות, טלפון ותפריט.", [page.subject], 4, 2, OWNER,
+                    f"{page.data.get('word_count', 0)} מילים בדף")
+            if not page.data.get("has_hours"):
+                add("profile-hours", "להוסיף שעות פתיחה לדף", "לא מצאנו בדף שעות פתיחה.",
+                    "לכתוב את שעות הפתיחה בפרטי הדף.", [page.subject], 3, 1, OWNER,
+                    "לא נמצאה שעה בטקסט הדף")
+            if not page.data.get("has_phone"):
+                add("profile-phone", "להוסיף טלפון לדף העסק", "לא מצאנו בדף מספר טלפון.",
+                    "להוסיף מספר טלפון בפרטי הדף.", [page.subject], 3, 1, OWNER,
+                    "לא נמצא מספר טלפון או קישור חיוג")
+    add("no-own-site", "לפתוח לעסק אתר משלו", f"לעסק יש רק דף {at}. למנועי AI זה מעט מדי.",
+        "להקים אתר קטן עם תפריט, כתובת, שעות ומחירים.", [], 5, 4, "בונה אתרים",
+        "אין דומיין ואתר בבעלות העסק")
+    if platform != "גוגל מפות" and not google_checked:
+        add("check-google-profile", "לוודא שיש פרופיל בגוגל",
+            "לא בדקנו. הפרופיל מציג שעות, כתובת וביקורות בחיפוש.",
+            "לפתוח או לעדכן פרופיל עסק בגוגל, בחינם.", [], 3, 1, OWNER,
+            "Google Business Profile (לא נבדק, לא נכלל בציון)")
+    return sorted(found, key=lambda f: (-f.score, -f.impact, f.key))
+
+
 class TechnicalSeo:
     name = NAME
 
@@ -73,6 +137,9 @@ class TechnicalSeo:
         indexable = [p for p in readable if not _noindex(p)]
         site = next((f for f in facts if f.collector == "site-crawler" and f.kind == "site"), None)
         findings: list[Finding] = []
+        if site is not None and site.data.get("profile"):
+            google_checked = any(f.kind == "google_profile" for f in facts)
+            return _business_page(site, pages, google_checked)
 
         def add(key, title, detail, how, evidence, impact, effort, owner, tech):
             if evidence or evidence is None:

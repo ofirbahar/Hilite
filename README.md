@@ -50,6 +50,22 @@ The scan then opens such pages in a headless browser (up to 12 per scan) and che
 real content. It still reports that crawlers see an empty page, because that stays true
 for search and AI crawlers. Without the browser the scan runs and reports only that.
 
+## A business with no site of its own
+
+The address can be a page on Facebook, Instagram, TikTok, Linktree, Wolt, 10bis, easy,
+rest, Tripadvisor or Google Maps. Only that one page is read, never the rest of the
+platform, and the business still gets a full report and a score from what can be measured:
+
+- whether the platform keeps the page closed to AI engines (from its published rules)
+- what the page says: enough text, opening hours, a phone number
+- that the business has no site of its own
+- its Google profile, when `GOOGLE_PLACES_API_KEY` is set (Places API (New), Text Search):
+  found or not, opening hours, phone, photos, number of reviews, rating. The lookup uses
+  the business name and the optional city, and costs money on that Google account.
+
+A task whose key starts with `check-` is advice that could not be verified. It is shown
+but never costs points.
+
 ## Sites the scan cannot read
 
 A site that refuses automated visitors (an error page or an "are you a robot" check) is

@@ -11,7 +11,8 @@ from urllib.parse import urlparse
 
 from flask import Flask, abort, redirect, render_template, request, url_for
 
-from .config import ClientConfig, ConfigError, is_public_address, split_site_address
+from .config import (ClientConfig, ConfigError, is_public_address, platform_of,
+                     split_site_address)
 from .pipeline import RunResult, default_collectors
 from .pipeline import run as run_pipeline
 from .report import render_report
@@ -32,9 +33,10 @@ def _split(text: str, pattern: str, limit: int) -> list[str]:
     return [part.strip() for part in re.split(pattern, text or "") if part.strip()][:limit]
 
 
-def _slug(site: str) -> str:
+def _slug(site: str, page: str = "") -> str:
+    """A short key for the business. `page` tells apart businesses that share a platform."""
     host = (urlparse(site).hostname or "site").removeprefix("www.")
-    return re.sub(r"[^a-z0-9]+", "-", host.lower()).strip("-") or "site"
+    return re.sub(r"[^a-z0-9]+", "-", (host + page).lower()).strip("-") or "site"
 
 
 def create_app(db_path: str = "bvm.sqlite3", allow_private: bool = False,
@@ -93,8 +95,10 @@ def create_app(db_path: str = "bvm.sqlite3", allow_private: bool = False,
         if error:
             return render_template("check.html", runs=recent_runs(), error=error, form=form), 400
 
+        platform = platform_of(site, start_path)
         cfg = ClientConfig(
-            name=name, slug=_slug(site), site=site, start_path=start_path,
+            name=name, slug=_slug(site, start_path if platform else ""), site=site,
+            start_path=start_path, platform=platform, city=form.get("city", "").strip()[:60],
             competitors=_split(form.get("competitors", ""), r"[\n,]", MAX_COMPETITORS),
             buyer_questions=_split(form.get("questions", ""), r"\n", MAX_QUESTIONS),
             target_country=DEFAULT_COUNTRY,

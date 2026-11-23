@@ -23,9 +23,11 @@ class ClientConfig:
     aliases: list[str] = field(default_factory=list)
     competitors: list[str] = field(default_factory=list)
     target_country: str = "US"
+    city: str = ""            # where the business is; narrows the Google profile lookup
     buyer_questions: list[str] = field(default_factory=list)
     approved_description: str = ""
     start_path: str = "/"     # where the scan begins, e.g. "/il/he/" for a site in a folder
+    platform: str = ""        # set when the address is a page on someone else's platform
     max_pages: int = 50
     delay_seconds: float = 0.5
     slow_page_seconds: float = 2.0
@@ -76,6 +78,40 @@ def split_site_address(site: str) -> tuple[str, str]:
     return f"{parsed.scheme}://{parsed.netloc}", parsed.path or "/"
 
 
+# Places where a business without its own site keeps a page: host -> (name, path it must
+# start with). A page there is the business's address; the rest of the host is not theirs.
+PLATFORMS = {
+    "facebook.com": ("פייסבוק", "/"),
+    "instagram.com": ("אינסטגרם", "/"),
+    "tiktok.com": ("טיקטוק", "/"),
+    "linktr.ee": ("Linktree", "/"),
+    "wolt.com": ("Wolt", "/"),
+    "10bis.co.il": ("תן ביס", "/"),
+    "mishloha.co.il": ("משלוחה", "/"),
+    "easy.co.il": ("easy", "/"),
+    "rest.co.il": ("rest", "/"),
+    "tripadvisor.com": ("Tripadvisor", "/"),
+    "tripadvisor.co.il": ("Tripadvisor", "/"),
+    "google.com": ("גוגל מפות", "/maps"),
+    "google.co.il": ("גוגל מפות", "/maps"),
+    "maps.app.goo.gl": ("גוגל מפות", "/"),
+    "g.page": ("גוגל מפות", "/"),
+}
+
+
+def platform_of(site: str, path: str) -> str:
+    """The platform's name when the address is a business page on one, otherwise ""."""
+    host = (urlparse(site).hostname or "").lower()
+    for prefix in ("www.", "m."):
+        host = host.removeprefix(prefix)
+    if not (path or "").strip("/"):
+        return ""                              # the platform's own front page
+    for known, (name, must_start_with) in PLATFORMS.items():
+        if (host == known or host.endswith("." + known)) and path.startswith(must_start_with):
+            return name
+    return ""
+
+
 def is_public_address(site: str) -> bool:
     """True only if the host resolves to public internet addresses.
 
@@ -106,9 +142,11 @@ def load_config(path: str | Path) -> ClientConfig:
         aliases=list(raw.get("aliases") or []),
         competitors=_names(raw.get("competitors")),
         target_country=raw.get("target_country", "US"),
+        city=str(raw.get("city") or "").strip(),
         buyer_questions=list(raw.get("buyer_questions") or []),
         approved_description=raw.get("approved_description", ""),
         start_path=split_site_address(raw["site"])[1],
+        platform=platform_of(site, split_site_address(raw["site"])[1]),
         max_pages=int(crawl.get("max_pages", 50)),
         delay_seconds=float(crawl.get("delay_seconds", 0.5)),
         slow_page_seconds=float(crawl.get("slow_page_seconds", 2.0)),

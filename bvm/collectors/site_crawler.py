@@ -5,6 +5,7 @@ and brings back raw facts only. Deciding what matters is the analyzers' job.
 """
 from __future__ import annotations
 
+import re
 import time
 from collections import deque
 from dataclasses import dataclass
@@ -80,6 +81,11 @@ def _clean(url: str) -> str:
     return urlunparse((p.scheme.lower(), _netloc(p), p.path or "/", p.params, query, ""))
 
 
+# A phone number as people write it (03-555-1234, +972 50 555 1234) and a clock time (10:00).
+PHONE = re.compile(r"(?<!\d)(?:\+\d{1,3}[-\s]?\d|0\d)[\d\-\s]{6,12}\d(?!\d)")
+CLOCK_TIME = re.compile(r"(?<!\d)\d{1,2}:\d{2}(?!\d)")
+
+
 def is_shell(page: dict) -> bool:
     """A page that is all scripts and no content: it is built in the visitor's browser."""
     return (page.get("scripts", 0) >= 3 and page.get("word_count", 0) < 50
@@ -110,7 +116,10 @@ def parse_page(url: str, html: str | bytes, charset: str | None = None) -> dict:
             continue
         links.append(_clean(urljoin(url, href)))
     body_text = _text(soup.body) if soup.body else ""
+    dial_link = soup.find("a", href=lambda v: v and v.strip().lower().startswith("tel:"))
     return {
+        "has_phone": bool(dial_link or PHONE.search(body_text)),
+        "has_hours": bool(CLOCK_TIME.search(body_text)),
         "title": _text(soup.title),
         "description": (description.get("content") or "").strip() if description else "",
         "h1": [_text(h) for h in soup.find_all("h1")],
@@ -208,14 +217,18 @@ class SiteCrawler:
         return bool(fetched is not None and fetched.status == 200
                     and "html" not in fetched.content_type)
 
-    def _site_facts(self, site: str) -> tuple[Fact, RobotFileParser | None]:
+    def _rules(self, site: str) -> RobotFileParser | None:
+        """What the host asks of crawlers, or None when it publishes no rules."""
         response, _, _ = self._get(site + "/robots.txt")
-        rules = None
-        has_robots = bool(response is not None and response.status == 200
-                          and "html" not in response.content_type)
-        if has_robots:
-            rules = RobotFileParser()
-            rules.parse(response.body.decode("utf-8", errors="replace").splitlines())
+        if response is None or response.status != 200 or "html" in response.content_type:
+            return None
+        rules = RobotFileParser()
+        rules.parse(response.body.decode("utf-8", errors="replace").splitlines())
+        return rules
+
+    def _site_facts(self, site: str) -> tuple[Fact, RobotFileParser | None]:
+        rules = self._rules(site)
+        has_robots = rules is not None
         # A sitemap named in robots.txt counts, whatever its file name.
         declared = bool(rules and rules.site_maps())
         data = {
@@ -233,8 +246,41 @@ class SiteCrawler:
         finally:
             self._close_browser()
 
+    def _collect_profile(self, cfg: ClientConfig) -> list[Fact]:
+        """A business page on someone else's platform: read that one page and nothing else.
+
+        The rest of the host belongs to other people, so no link is followed.
+        """
+        url = _clean(cfg.site + cfg.start_path)
+        rules = self._rules(cfg.site)
+        site_fact = Fact(NAME, "site", cfg.site, {
+            "profile": cfg.platform, "has_robots_txt": rules is not None, "has_sitemap": False,
+            # The platform's own rules, applied to this business's page.
+            "ai_crawlers_blocked": [bot for bot in AI_CRAWLERS
+                                    if rules and not rules.can_fetch(bot, url)]})
+        data: dict = {"linked_from": "", "profile": cfg.platform}
+        if rules and not rules.can_fetch(USER_AGENT, url):
+            data["skipped"] = "robots.txt"
+            return [site_fact, Fact(NAME, "page", url, data)]
+        response, elapsed, error = self._get(url)
+        data["seconds"] = round(elapsed, 3)
+        if response is None:
+            data.update(status=0, error=error)
+        else:
+            is_html = "html" in response.content_type
+            data.update(status=response.status, final_url=response.url, is_html=is_html)
+            if response.status == 200 and is_html:
+                data.update(parse_page(response.url, response.body, response.charset))
+                if is_shell(data):
+                    html = self._render(response.url)
+                    if html:
+                        data.update(parse_page(response.url, html), rendered=True)
+        return [site_fact, Fact(NAME, "page", url, data)]
+
     def _collect(self, cfg: ClientConfig) -> list[Fact]:
         self._rendered = 0
+        if cfg.platform:
+            return self._collect_profile(cfg)
         site = cfg.site
         start = _clean(site + (cfg.start_path or "/"))
         moved: list[Fact] = []
