@@ -12,6 +12,9 @@ This is the diagnosis stage: the company's own website, and how AI assistants an
 | `site-crawler` | collector | Visits the client's site, obeys robots.txt, brings back facts per page |
 | `ai-visibility` | collector | Asks AI assistants the buyer questions. Records mentions, competitors, cited sites |
 | `technical-seo` | analyzer | Turns crawl facts into ranked findings (impact and effort) |
+| `page-speed` | collector | Asks Google for the site's speed on a phone (needs a key) |
+| `page-experience` | analyzer | Judges those measurements by Google's limits |
+| `buyer-questions` | analyzer | Compares the buyers' questions with what the site says |
 | `ai-gap` | analyzer | Share of AI answers, questions where competitors win, sites the AI trusts |
 | notebook | storage | SQLite file. Every fact and finding is saved with date and source |
 | report | action | One HTML page in Hebrew: one score, the top three things to fix, then the rest |
@@ -180,15 +183,39 @@ page). `/sitemap.xml` lists the two public pages, `/robots.txt` names it, and `/
 says in plain text what the site is. A test reads the home page with Hilite's own reader
 and fails if it would report a gap.
 
+## What holds a site back, past "can it be read"
+
+- **Phones.** A page with no viewport setting shows on a phone as a shrunken desktop page
+  ("להתאים את האתר לנייד").
+- **Speed on a phone, as Google measures it.** With `GOOGLE_PAGESPEED_API_KEY` set
+  (PageSpeed Insights API, free within Google's quota), the address is sent to Google,
+  which returns Core Web Vitals: how long the main content takes to show, how much the
+  page jumps, how long a tap takes to answer. What real visitors had is judged by Google's
+  limits. A single test run moves from run to run, so alone it is reported only when it is
+  clearly poor. A page on a platform is not measured.
+- **Titles Google cuts off** (over 70 characters) and **descriptions that repeat** across
+  pages.
+- **Details shown to people but not to engines.** When the pages show a phone number or
+  opening hours and the site's JSON-LD about the business gives neither, the report says
+  which is left out.
+- **Pages with little text** (under 100 words) are listed to be looked at and cost nothing.
+- **Buyers' questions against the site.** The questions entered for the AI check are
+  compared with the pages read, by the words that carry each question. A question most
+  of whose words appear nowhere on the site is listed under "לוודא שהאתר עונה לקונים".
+  The comparison is by words, not meaning, so it costs no points.
+- **What each task changes.** Every task says "משפיע על": Google, AI answers, or both.
+
+These changed the formula (version 5). Run `python -m bvm rescore` once. Checks made
+before this recorded neither the phone setting nor the business details, so those two are
+never reported for them.
+
 ## AI crawlers: two kinds
 
 A site can close itself to the crawlers that fetch pages for an AI answer (OAI-SearchBot,
 ChatGPT-User, PerplexityBot, Perplexity-User, Claude-SearchBot, Claude-User) or to the ones
 that collect text for training (GPTBot, ClaudeBot, Google-Extended). Only the first kind
 keeps a business out of the answers, so only it costs points ("להסיר חסימת AI"). A site
-closed to training alone gets "לבדוק את חסימת אימון ה-AI", which costs nothing. This
-changed the formula (version 4): run `python -m bvm rescore` once so older checks can be
-compared with new ones.
+closed to training alone gets "לבדוק את חסימת אימון ה-AI", which costs nothing.
 
 robots.txt is read the way search engines read it (the most specific rule wins), not in
 file order, so "what Google may read" matches what Google does.

@@ -91,6 +91,8 @@ def _answer_crawlers(blocked: list[str]) -> list[str]:
     """Of the AI crawlers a site closes itself to, the ones that fetch pages for answers."""
     return [bot for bot in blocked if bot in AI_SEARCH]
 THIN_PAGE_WORDS = 50
+SHORT_PAGE_WORDS = 100     # a page of a site with less text than this says little to anyone
+LONG_TITLE = 70            # past this Google cuts the title off in its results
 
 
 def _business_page(site: Fact, pages: list[Fact], google_checked: bool) -> list[Finding]:
@@ -282,6 +284,47 @@ class TechnicalSeo:
             duplicates, 3, 2, WRITER, "תגי title כפולים", among=indexable,
             hit=[p for p in indexable if len(by_title.get(p.data.get("title"), ())) > 1])
 
+        long_titles = [p for p in sure if len(p.data.get("title") or "") > LONG_TITLE
+                       and not p.data.get("title_unverified")]
+        add("title-length", "לקצר כותרות ארוכות",
+            _count(len(long_titles), "כותרת אחת נחתכת", "כותרות נחתכות") + " בתוצאות של גוגל.",
+            "לקצר כל כותרת לעד 60 תווים.",
+            [f"{p.subject} ({len(p.data['title'])} תווים)" for p in long_titles],
+            2, 1, WRITER, f"תג title ארוך מ-{LONG_TITLE} תווים", among=indexable, hit=long_titles)
+
+        by_description: dict[str, set[str]] = defaultdict(set)
+        for p in sure:
+            if p.data.get("description"):
+                by_description[p.data["description"]].add(_identity(p))
+        same_description = [f'"{d[:60]}": {", ".join(sorted(urls))}'
+                            for d, urls in by_description.items() if len(urls) > 1]
+        add("duplicate-description", "לתת לכל דף תיאור משלו",
+            "כמה דפים נושאים את אותו תיאור.",
+            "לכתוב לכל דף תיאור שמתאים רק לו.",
+            same_description, 2, 2, WRITER, "תגי meta description כפולים", among=indexable,
+            hit=[p for p in indexable
+                 if len(by_description.get(p.data.get("description"), ())) > 1])
+
+        # A check made before this was recorded has no "viewport" at all; only a page
+        # that was looked at and has none counts.
+        no_viewport = [p for p in sure if p.data.get("viewport") is False]
+        add("mobile-viewport", "להתאים את האתר לנייד",
+            _count(len(no_viewport), "דף אחד לא מותאם", "דפים לא מותאמים") + " למסך של טלפון.",
+            "להוסיף לדפים הגדרת תצוגה לנייד.",
+            [p.subject for p in no_viewport], 4, 1, BUILDER, "תג meta viewport חסר",
+            among=indexable, hit=no_viewport)
+
+        # Little text is often deliberate (a contact page, a gallery), so this is a thing
+        # to look at and costs no points.
+        short = [p for p in sure if p is not home and p not in shells
+                 and p.data.get("word_count", SHORT_PAGE_WORDS) < SHORT_PAGE_WORDS]
+        add("check-thin-pages", "לבדוק דפים דלים בטקסט",
+            ("בדף אחד יש" if len(short) == 1 else f"ב-{len(short)} דפים יש")
+            + f" פחות מ-{SHORT_PAGE_WORDS} מילים.",
+            "להוסיף טקסט שמסביר את השירות, אם הדף חשוב.",
+            [f"{p.subject} ({p.data.get('word_count', 0)} מילים)" for p in short],
+            2, 2, WRITER, "דפים עם מעט תוכן (לא נכלל בציון)")
+
         # Only a page with no main heading at all. Several of them on one page is a common
         # and accepted way to build a page, and search engines read it without trouble.
         bad_h1 = [p for p in sure if not p.data.get("h1")]
@@ -303,6 +346,20 @@ class TechnicalSeo:
                 "גוגל ו-AI לא מקבלים מהאתר את פרטי העסק.",
                 "להוסיף לאתר את פרטי העסק בפורמט שמנועים קוראים.",
                 no_schema[:5], 4, 3, BUILDER, "נתונים מובנים (schema, JSON-LD)")
+
+        # The site hands engines some details, but not the ones a buyer acts on, although
+        # it shows them to people. Said only for what the pages themselves display.
+        detailed = [p.data["business"] for p in sure if p.data.get("business")]
+        if detailed:
+            left_out = [name for key, shown, name in (
+                ("phone", "has_phone", "טלפון"), ("hours", "has_hours", "שעות פתיחה"))
+                if any(p.data.get(shown) for p in sure) and not any(d.get(key) for d in detailed)]
+            if left_out:
+                add("business-details-partial", "להשלים את פרטי העסק למנועים",
+                    "פרטים שמופיעים באתר חסרים במידע שמנועים קוראים.",
+                    "להוסיף טלפון, כתובת ושעות לפרטי העסק המובנים.",
+                    left_out, 3, 2, BUILDER,
+                    "JSON-LD של העסק בלי telephone / openingHours")
 
         no_alt = [p for p in indexable if p.data.get("images_missing_alt")]
         alt = [f"{p.subject} ({p.data['images_missing_alt']} תמונות)" for p in no_alt]

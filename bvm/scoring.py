@@ -11,7 +11,7 @@ from .models import Fact, Finding
 
 # Raised whenever the formula changes. Two checks are compared only when they were scored
 # the same way, so a change here is never shown to an owner as their own progress.
-SCORING = 4
+SCORING = 5
 # How many points one site problem costs at most, by its impact (5 = critical).
 PENALTY = {5: 15, 4: 9, 3: 5, 2: 3, 1: 1}
 # A problem on a single page costs this share of the full points. The cost grows with the
@@ -19,7 +19,7 @@ PENALTY = {5: 15, 4: 9, 3: 5, 2: 3, 1: 1}
 FLOOR, FULL_AT = 0.4, 0.5
 # Whose findings count: what we measured on the web. A task whose key starts with "check-"
 # is advice we could not verify, so it never costs points.
-SCORED = ("technical-seo", "google-presence")
+SCORED = ("technical-seo", "google-presence", "page-experience")
 # A home page Google cannot show is never "good", however tidy the rest is.
 CAP = 49
 CAPPED = ("noindex", "home-closed-to-google")
@@ -85,7 +85,7 @@ def measured(facts: list[Fact], findings: list[Finding]) -> int:
 
 
 def parts(facts: list[Fact]) -> set[str]:
-    """Which of the three measurements this check really has: "site", "google", "ai".
+    """Which of the measurements this check really has: "site", "google", "speed", "ai".
 
     Two checks are compared only when they have the same ones. Otherwise the score moves
     because of what was measured, not because of anything the owner did, and a task that
@@ -97,6 +97,8 @@ def parts(facts: list[Fact]) -> set[str]:
             have.add("site")
         elif fact.kind == "google_profile" and fact.data.get("match") != "unsure":
             have.add("google")
+        elif fact.kind == "page_speed":
+            have.add("speed")
         elif fact.collector == "ai-visibility" and fact.kind == "ai_answer":
             have.add("ai")
     return have

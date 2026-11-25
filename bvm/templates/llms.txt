@@ -6,8 +6,10 @@ Hilite is for business owners in Israel and the people who work for them. The in
 
 ## What a check does
 
-- Reads up to 30 pages of the business's site and runs 13 checks on them: broken links, pages hidden from or closed to Google, pages closed to AI crawlers, missing titles and descriptions, repeated titles, missing main headings, slow pages, business details in a form search engines read, pictures without a description, a list of pages for search engines, and pages that are empty without a browser.
-- When buyer questions are entered and an AI assistant is connected, asks the assistants those questions and records whether the business and its competitors are named, and which sites the answer relies on.
+- Reads up to 30 pages of the business's site and runs 18 checks on them: broken links, pages hidden from or closed to Google, pages closed to AI crawlers, missing titles and descriptions, repeated titles, missing main headings, slow pages, business details in a form search engines read, pictures without a description, a list of pages for search engines, pages that are empty without a browser, pages not set up for a phone screen, titles Google cuts off, repeated descriptions, a phone number or opening hours the site shows people but leaves out of its details for engines, and pages with little text.
+- When buyer questions are entered and an AI assistant is connected, asks the assistants those questions and records whether the business and its competitors are named, and which sites the answer relies on. It also compares those questions with what the site itself says.
+- When connected, measures speed on a phone as Google does (Core Web Vitals).
+- Every task in the report says who fixes it and whether it affects Google, AI answers or both.
 - A business with no site of its own can enter its page on Facebook, Instagram, Wolt or Google Maps. Only that one page is read.
 - The check only reads. It identifies itself by name (HiliteBot) and obeys each site's robots.txt.
 

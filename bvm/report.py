@@ -23,8 +23,31 @@ PART_NAMES = {
     "google-profile": "בדיקת הפרופיל בגוגל",
     "google-presence": "ניתוח הפרופיל בגוגל",
     "ai-gap": "ניתוח תשובות ה-AI",
+    "page-speed": "בדיקת המהירות בנייד",
+    "page-experience": "ניתוח המהירות בנייד",
+    "buyer-questions": "השוואת השאלות לאתר",
     "pipeline": "הבדיקה",
 }
+# What fixing a task changes: where the business shows up afterwards. Said per task so an
+# owner can see why it is on the list. A task not named here follows its analyzer.
+GOOGLE, AI, BOTH = "גוגל", "תשובות AI", "גוגל ותשובות AI"
+AFFECTS = {
+    "ai-crawlers-blocked": AI, "check-ai-training-blocked": AI, "profile-closed-to-ai": AI,
+    "check-questions-unanswered": AI,
+    "noindex": GOOGLE, "check-noindex": GOOGLE, "home-closed-to-google": GOOGLE,
+    "check-robots-blocked": GOOGLE, "check-sitemap": GOOGLE, "missing-description": GOOGLE,
+    "duplicate-description": GOOGLE, "duplicate-title": GOOGLE, "title-length": GOOGLE,
+    "slow-pages": GOOGLE, "image-alt": GOOGLE, "mobile-viewport": GOOGLE,
+    "profile-hidden": GOOGLE,
+}
+AFFECTS_BY_PART = {"technical-seo": BOTH, "google-presence": BOTH, "page-experience": GOOGLE,
+                   "ai-gap": AI, "buyer-questions": AI}
+
+
+def affects(finding: Finding) -> str:
+    return AFFECTS.get(finding.key) or AFFECTS_BY_PART.get(finding.analyzer, "")
+
+
 _env = Environment(
     loader=FileSystemLoader(Path(__file__).parent / "templates"),
     autoescape=select_autoescape(["html"]),
@@ -97,6 +120,7 @@ def render_report(cfg: ClientConfig, result: RunResult, today: date | None = Non
         ai=ai,
         lost=breakdown(result.findings) if scanned else [],
         extent={f.key: (f.affected, f.of) for f in result.findings if f.of},
+        affects={f.key: affects(f) for f in result.findings},
         since=changes(previous, value, result.findings, parts(result.facts)),
         again_url=again_url,
         delete_url=delete_url,

@@ -18,7 +18,7 @@ CFG = ClientConfig("Acme", "acme", SITE)
 
 def page(path: str, **data) -> Fact:
     base = {"linked_from": "" if path == "/" else SITE + "/", "status": 200, "is_html": True,
-            "title": "T" + path, "description": "d", "h1": ["h"], "meta_robots": "",
+            "title": "T" + path, "description": "d" + path, "h1": ["h"], "meta_robots": "",
             "x_robots_tag": "", "has_structured_data": True, "images_missing_alt": 0,
             "seconds": 0.1, "googlebot_allowed": True, "word_count": 300, "links": [SITE + "/"]}
     return Fact("site-crawler", "page", SITE + path, {**base, **data})

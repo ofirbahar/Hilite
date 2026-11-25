@@ -21,6 +21,7 @@
   <div class="inside{% if n %} nested{% endif %}">
     <p>{{ f.detail }}</p>
     <p class="fix">{{ f.how_to_fix }}</p>
+    {% if affects.get(f.key) %}<p class="by">משפיע על: {{ affects[f.key] }}</p>{% endif %}
     {% if f.owner %}<p class="by">מי מתקן: {{ f.owner }}</p>{% endif %}
     {% if f.evidence or f.tech %}
     <details class="tech">

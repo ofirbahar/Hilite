@@ -78,6 +78,7 @@ def test_analyzer_finds_the_planted_problems(findings, site):
         "broken-links", "check-noindex", "check-robots-blocked", "missing-title",
         "missing-description",
         "slow-pages", "structured-data", "image-alt", "check-sitemap", "ai-crawlers-blocked",
+        "check-thin-pages",
     }
     assert findings["check-noindex"].evidence == [site + "/pricing"]
     assert findings["missing-title"].evidence == [site + "/about"]

@@ -13,7 +13,7 @@ from bvm.config import ClientConfig
 os.environ["NO_PROXY"] = "127.0.0.1,localhost"
 os.environ["no_proxy"] = "127.0.0.1,localhost"
 
-HOME = """<html lang="en"><head><title>Acme Home</title>
+HOME = """<html lang="en"><head><meta name="viewport" content="width=device-width"><title>Acme Home</title>
 <meta name="description" content="Acme makes widgets."></head>
 <body><h1>Acme</h1>
 <a href="/about">About</a> <a href="/pricing">Pricing</a> <a href="/missing">Old page</a>
@@ -21,14 +21,14 @@ HOME = """<html lang="en"><head><title>Acme Home</title>
 <a href="https://other.example/">Elsewhere</a> <a href="mailto:hi@acme.test">Mail</a>
 <img src="a.png" alt="A widget"></body></html>"""
 
-ABOUT = """<html><head></head><body><h1>About</h1><h1>Team</h1>
+ABOUT = """<html><head><meta name="viewport" content="width=device-width"></head><body><h1>About</h1><h1>Team</h1>
 <img src="team.png"><a href="/">Home</a></body></html>"""
 
-PRICING = """<html><head><title>Acme Home</title>
+PRICING = """<html><head><meta name="viewport" content="width=device-width"><title>Acme Home</title>
 <meta name="robots" content="noindex, follow">
 <meta name="description" content="Prices."></head><body><h1>Pricing</h1></body></html>"""
 
-SLOW = """<html><head><title>Slow page</title><meta name="description" content="Slow.">
+SLOW = """<html><head><meta name="viewport" content="width=device-width"><title>Slow page</title><meta name="description" content="Slow.">
 </head><body><h1>Slow</h1></body></html>"""
 
 ROBOTS = "User-agent: *\nDisallow: /private/\n\nUser-agent: OAI-SearchBot\nDisallow: /\n"

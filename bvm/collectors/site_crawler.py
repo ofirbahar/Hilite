@@ -18,6 +18,7 @@ from bs4 import BeautifulSoup
 from .. import render
 from ..config import ClientConfig, is_public_address
 from ..models import Fact
+from ..questions import all_cores, held
 from ..robots import Rules, looks_like_robots
 
 NAME = "site-crawler"
@@ -154,6 +155,38 @@ def _data_name(soup) -> str:
     return business or website
 
 
+def _business_data(soup) -> dict:
+    """What the page's JSON-LD says about the business itself: whether it gives a phone,
+    an address and opening hours. Empty when the page carries no readable JSON-LD, so
+    "it has none" is never confused with "we could not tell"."""
+    has = {"phone": False, "address": False, "hours": False}
+    read = False
+
+    def walk(node) -> None:
+        if isinstance(node, list):
+            for item in node:
+                walk(item)
+        elif isinstance(node, dict):
+            kinds = node.get("@type") or []
+            kinds = {kinds} if isinstance(kinds, str) else {k for k in kinds if isinstance(k, str)}
+            if kinds and kinds != {"WebSite"} and not kinds & NOT_A_BUSINESS:
+                has["phone"] |= bool(node.get("telephone"))
+                has["address"] |= bool(node.get("address"))
+                has["hours"] |= bool(node.get("openingHours")
+                                     or node.get("openingHoursSpecification"))
+            for value in node.values():
+                if isinstance(value, (dict, list)):
+                    walk(value)
+
+    for script in soup.find_all("script", type="application/ld+json"):
+        try:
+            walk(json.loads(script.string or ""))
+            read = True
+        except (ValueError, RecursionError):
+            continue
+    return has if read else {}
+
+
 BOUND_ALT = (":alt", "v-bind:alt", "[alt]", "[attr.alt]", "x-bind:alt", "ng-attr-alt", "bind:alt")
 # A page the browser was shown that is this much shorter than the one we read is not the
 # same page: it is a "prove you are human" or "access denied" screen.
@@ -224,16 +257,20 @@ def _meta(soup, prop: str) -> str:
     return (tag.get("content") or "").strip() if tag else ""
 
 
-def parse_page(url: str, html: str | bytes, charset: str | None = None) -> dict:
+def parse_page(url: str, html: str | bytes, charset: str | None = None,
+               look_for: frozenset[str] = frozenset()) -> dict:
     """Pull the facts an editor would want out of one HTML page.
 
     Given bytes, the page's own <meta charset> is honoured when the server names none.
+    look_for: the words of the buyers' questions (see bvm.questions); the page records
+    which of them it holds.
     """
     if isinstance(html, bytes):
         soup = BeautifulSoup(html, "lxml", from_encoding=charset)
     else:
         soup = BeautifulSoup(html, "lxml")
     description = soup.find("meta", attrs={"name": lambda v: v and v.lower() == "description"})
+    viewport = soup.find("meta", attrs={"name": lambda v: v and v.lower() == "viewport"})
     robots = soup.find("meta", attrs={"name": lambda v: v and v.lower() == "robots"})
     canonical = soup.find("link", rel=lambda v: v and "canonical" in v)
     images = soup.find_all("img")
@@ -248,12 +285,18 @@ def parse_page(url: str, html: str | bytes, charset: str | None = None) -> dict:
             continue                    # a mistyped link must not cost the whole scan
     body_text = _text(soup.body) if soup.body else ""
     dial_link = soup.find("a", href=lambda v: v and v.strip().lower().startswith("tel:"))
+    described = (description.get("content") or "").strip() if description else ""
     return {
+        # Without this line a phone shows the page as a shrunken desktop page.
+        "viewport": bool(viewport and (viewport.get("content") or "").strip()),
+        "business": _business_data(soup),
+        "words_found": held(" ".join((_text(soup.head.find("title")) if soup.head else "",
+                                      described, body_text)), look_for),
         "has_phone": bool(dial_link or PHONE.search(body_text)),
         "has_hours": bool(CLOCK_TIME.search(body_text)),
         # The page's own title; an <svg><title> in the body is a picture's label.
         "title": _text(soup.head.find("title")) if soup.head else "",
-        "description": (description.get("content") or "").strip() if description else "",
+        "description": described,
         "h1": [_text(h) for h in soup.find_all("h1")],
         # What the page calls itself, for naming the business when the owner did not.
         "site_name": _meta(soup, "og:site_name"),
@@ -288,6 +331,7 @@ class SiteCrawler:
         self._rendered = 0
         self._render_seconds = 0.0
         self._rules_by_origin: dict[str, Rules | None] = {}
+        self._look_for: frozenset[str] = frozenset()
 
     def _render(self, url: str) -> str | None:
         """The page after its scripts ran, or None when no browser can be used."""
@@ -320,10 +364,16 @@ class SiteCrawler:
             if self.render and render.available():
                 data["unverified"] = True
             return
-        seen = parse_page(url, html)
+        seen = parse_page(url, html, look_for=self._look_for)
         if seen["word_count"] < data.get("word_count", 0) * SAME_PAGE:
             data["unverified"] = True       # the browser was turned away; this is not the page
             return
+        data["viewport"] = data.get("viewport") or seen["viewport"]
+        data["words_found"] = sorted({*data.get("words_found", []), *seen["words_found"]})
+        if seen["business"]:                # scripts may add the business details too
+            mine = data.get("business") or {}
+            data["business"] = {key: bool(mine.get(key) or value)
+                                for key, value in seen["business"].items()}
         for key in ("description", "h1", "site_name", "og_title", "data_name"):
             if not data.get(key) and seen.get(key):
                 data[key] = seen[key]
@@ -501,6 +551,7 @@ class SiteCrawler:
         self._rendered = 0
         self._render_seconds = 0.0
         self._rules_by_origin = {}
+        self._look_for = all_cores(cfg.buyer_questions)
         if cfg.platform:
             return self._collect_profile(cfg)
         site = cfg.site
@@ -589,12 +640,13 @@ class SiteCrawler:
             is_html = "html" in response.content_type
             data["is_html"] = is_html
             if response.status == 200 and is_html:
-                data.update(parse_page(response.url, response.body, response.charset))
+                data.update(parse_page(response.url, response.body, response.charset,
+                                       look_for=self._look_for))
                 if is_shell(data):
                     data["empty_without_browser"] = True       # what a crawler gets
                     html = self._render(response.url)
                     if html:
-                        in_browser = parse_page(response.url, html)
+                        in_browser = parse_page(response.url, html, look_for=self._look_for)
                         data.update(in_browser, rendered=True)
                         if is_shell(in_browser):
                             # Just as small in a real browser: a short page, not a hidden one.
