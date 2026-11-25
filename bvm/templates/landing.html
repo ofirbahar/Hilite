@@ -1,11 +1,14 @@
 {% extends "base.html" %}
-{% block head %}<script>document.documentElement.classList.add('js');</script>
-<meta name="description" content="בדיקה קצרה: איך האתר שלך נראה לגוגל, ומה עוזרי ה-AI עונים כששואלים על התחום שלך. ציון אחד ושלוש משימות לתיקון.">
+{% block head %}<script{% if nonce %} nonce="{{ nonce }}"{% endif %}>document.documentElement.classList.add('js');</script>
+<meta name="description" content="{{ description }}">
+<link rel="canonical" href="{{ canonical }}">
+<meta property="og:url" content="{{ canonical }}">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Hilite">
 <meta property="og:title" content="Hilite | גוגל ו-AI ממליצים על העסק שלך?">
-<meta property="og:description" content="בדיקה קצרה: איך האתר שלך נראה לגוגל, ומה עוזרי ה-AI עונים כששואלים על התחום שלך. ציון אחד ושלוש משימות לתיקון.">
-<meta property="og:locale" content="he_IL">{% endblock %}
+<meta property="og:description" content="{{ description }}">
+<meta property="og:locale" content="he_IL">
+<script type="application/ld+json">{{ about|tojson }}</script>{% endblock %}
 {% block title %}Hilite | גוגל ו-AI ממליצים על העסק שלך?{% endblock %}
 {% block style %}{% include "_landing_style.html" %}{% endblock %}
 {% block body %}
@@ -169,6 +172,20 @@
         <li><b>מזדהים בשם</b><p>כל ביקור שלנו באתר מסומן בשם הבודק.</p></li>
         <li><b>חשוב לדעת</b><p>תשובה שמתקבלת ישירות מעוזר AI לא תמיד זהה למה שרואים באפליקציה שלו.</p></li>
       </ul>
+    </div>
+  </section>
+
+  <section class="part tint" id="faq">
+    <div class="wrap">
+      <h2>שאלות נפוצות</h2>
+      <div class="rows faq">
+        {% for question, answer in faq %}
+        <details>
+          <summary><span class="t">{{ question }}</span>{{ chevron|safe }}</summary>
+          <div class="inside"><p>{{ answer }}</p></div>
+        </details>
+        {% endfor %}
+      </div>
     </div>
   </section>
 

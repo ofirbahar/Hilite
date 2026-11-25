@@ -49,7 +49,7 @@ def test_only_the_business_page_is_read_never_the_rest_of_the_platform(cfg, site
     assert [p.subject for p in pages] == [site + "/about"]      # its link to "/" is not followed
     assert pages[0].data["h1"] == ["About", "Team"]
     assert facts[0].kind == "site" and facts[0].data["profile"] == "פייסבוק"
-    assert facts[0].data["ai_crawlers_blocked"] == ["GPTBot"]   # the platform's rules, for this page
+    assert facts[0].data["ai_crawlers_blocked"] == ["OAI-SearchBot"]   # the platform's rules, for this page
     assert sorted(set(Handler.hits)) == ["/about", "/robots.txt"]
 
 
@@ -68,7 +68,7 @@ def test_a_readable_business_page_gets_a_full_check(cfg):
     found = TechnicalSeo().analyze(cfg, SiteCrawler().collect(cfg))
     assert [f.key for f in found] == [
         "profile-closed-to-ai", "no-own-site", "check-google-profile", "check-profile-thin"]
-    assert found[0].evidence == ["GPTBot"] and "Wolt" in found[0].detail
+    assert found[0].evidence == ["OAI-SearchBot"] and "Wolt" in found[0].detail
     for f in found:                                  # the same short, plain wording as every task
         assert len(f.title.split()) <= 5 and len(f.detail.split()) <= 10, f.key
         assert len(f.how_to_fix.split()) <= 10 and f.owner and f.tech, f.key

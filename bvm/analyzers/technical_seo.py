@@ -12,7 +12,7 @@ from urllib.parse import unquote, urlparse
 
 from urllib.parse import urljoin
 
-from ..collectors.site_crawler import _clean, is_shell
+from ..collectors.site_crawler import AI_SEARCH, _clean, is_shell
 from ..config import ClientConfig
 from ..models import Fact, Finding
 
@@ -85,6 +85,11 @@ def _nothing_read(pages: list[Fact]) -> Finding:
 
 
 OWNER = "בעל העסק"
+
+
+def _answer_crawlers(blocked: list[str]) -> list[str]:
+    """Of the AI crawlers a site closes itself to, the ones that fetch pages for answers."""
+    return [bot for bot in blocked if bot in AI_SEARCH]
 THIN_PAGE_WORDS = 50
 
 
@@ -102,7 +107,9 @@ def _business_page(site: Fact, pages: list[Fact], google_checked: bool) -> list[
     def add(key, title, detail, how, evidence, impact, effort, owner, tech):
         found.append(Finding(NAME, key, title, detail, how, evidence, impact, effort, owner, tech))
 
-    closed_to = site.data.get("ai_crawlers_blocked") or []
+    # Only the crawlers that fetch pages for answers. A platform that keeps its pages
+    # out of model training has not hidden the business from anyone who asks.
+    closed_to = _answer_crawlers(site.data.get("ai_crawlers_blocked") or [])
     refused = bool(page and page.data.get("skipped"))
     if closed_to or refused:
         add("profile-closed-to-ai", "לפרסם את העסק במקום פתוח",
@@ -317,10 +324,21 @@ class TechnicalSeo:
                     "הכתובת המאובטחת של האתר (https) לא נפתחת. דפדפנים מציגים שם אזהרה.",
                     "לחדש או להתקין תעודת SSL אצל חברת האחסון.",
                     None, 5, 2, BUILDER, "שגיאת SSL בכתובת https; הסריקה נעשתה ב-http")
+            # Two kinds of AI crawler. The ones that fetch pages for an answer decide
+            # whether the business can be found, so closing the site to them is a fault.
+            # The ones that collect text for training do not: many owners close the site
+            # to them on purpose, so that alone is a thing to look at and costs no points.
             blocked_bots = site.data.get("ai_crawlers_blocked") or []
-            add("ai-crawlers-blocked", "להסיר חסימת AI",
-                "האתר חוסם את מנועי ה-AI.",
-                "להסיר את החסימה בהגדרות האתר.",
-                blocked_bots, 5, 1, BUILDER, "חסימת סורקי AI בקובץ robots.txt")
+            if _answer_crawlers(blocked_bots):
+                add("ai-crawlers-blocked", "להסיר חסימת AI",
+                    "האתר חוסם את מנועי ה-AI.",
+                    "להסיר את החסימה בהגדרות האתר.",
+                    blocked_bots, 5, 1, BUILDER, "חסימת סורקי AI בקובץ robots.txt")
+            else:
+                add("check-ai-training-blocked", "לבדוק את חסימת אימון ה-AI",
+                    "האתר לא מרשה לחברות AI ללמוד מהתוכן שלו.",
+                    "זה לא מסתיר את העסק מהתשובות. אם זה מכוון, אין מה לתקן.",
+                    blocked_bots, 2, 1, BUILDER,
+                    "חסימת סורקי אימון בקובץ robots.txt (לא נכלל בציון)")
 
         return sorted(findings, key=lambda f: (-f.score, -f.impact, f.key))

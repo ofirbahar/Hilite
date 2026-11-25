@@ -1,0 +1,23 @@
+# Hilite
+
+> Hilite checks how a business shows up on Google and in the answers of AI assistants. The owner enters one address and gets a report in Hebrew: one score from 0 to 100 and the three things most worth fixing.
+
+Hilite is for business owners in Israel and the people who work for them. The interface and the report are in Hebrew.
+
+## What a check does
+
+- Reads up to 30 pages of the business's site and runs 13 checks on them: broken links, pages hidden from or closed to Google, pages closed to AI crawlers, missing titles and descriptions, repeated titles, missing main headings, slow pages, business details in a form search engines read, pictures without a description, a list of pages for search engines, and pages that are empty without a browser.
+- When buyer questions are entered and an AI assistant is connected, asks the assistants those questions and records whether the business and its competitors are named, and which sites the answer relies on.
+- A business with no site of its own can enter its page on Facebook, Instagram, Wolt or Google Maps. Only that one page is read.
+- The check only reads. It identifies itself by name (HiliteBot) and obeys each site's robots.txt.
+
+## Pages
+
+- [Home]({{ home }}): what Hilite checks and how it works
+- [Start a check]({{ check }}): the form; one address is enough
+- [What we keep]({{ privacy }}): what is saved, who can open a report, how to delete a check
+
+## Questions people ask (in Hebrew)
+
+{% for question, answer in faq %}- {{ question }} {{ answer }}
+{% endfor %}

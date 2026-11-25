@@ -1,4 +1,4 @@
-<script>
+<script{% if nonce %} nonce="{{ nonce }}"{% endif %}>
 /* A second press on a button that starts a check or deletes one does nothing. */
 (function () {
   document.addEventListener('submit', function (event) {

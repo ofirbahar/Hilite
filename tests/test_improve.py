@@ -112,7 +112,7 @@ def test_a_finding_knows_how_much_of_the_site_it_touches():
     assert (one.affected, one.of) == (1, 20)
     most = found(page("/"), *[page(f"/p{n}", description="") for n in range(19)])
     assert (most["missing-description"].affected, most["missing-description"].of) == (19, 20)
-    assert found(page("/"), ai_crawlers_blocked=["GPTBot"])["ai-crawlers-blocked"].of == 0   # whole site
+    assert found(page("/"), ai_crawlers_blocked=["OAI-SearchBot"])["ai-crawlers-blocked"].of == 0   # whole site
 
 
 def test_points_grow_with_the_share_of_pages_and_stop_at_half():

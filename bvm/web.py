@@ -16,7 +16,9 @@ from collections import deque
 from datetime import date, datetime, timezone
 from urllib.parse import urlparse
 
-from flask import Flask, abort, redirect, render_template, request, send_from_directory, url_for
+from flask import (Flask, abort, g, redirect, render_template, request, send_from_directory,
+                   url_for)
+from markupsafe import escape
 from werkzeug.exceptions import HTTPException
 
 from .config import (ClientConfig, ConfigError, exists, is_public_address, platform_of,
@@ -36,11 +38,36 @@ MAX_ACTIVE = 3   # scans at once; each one crawls, may open a browser and may co
 MAX_PER_VISITOR = 10         # checks one address on the internet may start...
 VISITOR_WINDOW_SECONDS = 600  # ...in this long. Each check costs us time and may cost money.
 MAX_SLUG = 80
-# What a browser may load on our pages: only what we serve ourselves. The pages carry
-# their styles and small scripts inline, so those are allowed; nothing from elsewhere is.
+MAX_FORM_BYTES = 64_000      # the form is a few short fields; nothing larger is read
+# What a browser may load on our pages: only what we serve ourselves. The pages carry their
+# styles inline, so those are allowed. A script runs only if it carries the mark made for
+# this one answer ({nonce}), so text that came from a scanned site or from an AI assistant
+# can never run as a script, even if it were ever shown unescaped.
 POLICY = ("default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; "
-          "script-src 'self' 'unsafe-inline'; frame-ancestors 'none'; base-uri 'self'; "
-          "form-action 'self'")
+          "script-src 'self' 'nonce-{nonce}'; object-src 'none'; frame-ancestors 'none'; "
+          "base-uri 'self'; form-action 'self'")
+# The pages use none of these, so no script on them may ask for them.
+NO_DEVICE_ACCESS = "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+# Questions people ask before they try it. Every answer repeats what the site already
+# says elsewhere. Shown on the home page and handed to search engines in the same words.
+FAQ = [
+    ("כמה זמן לוקחת בדיקה?",
+     "בדרך כלל דקה עד שתיים. הבדיקה קוראת עד 30 דפים באתר, והדוח נפתח לבד כשהיא מסתיימת."),
+    ("צריך להירשם?",
+     "לא. אין הרשמה, ולא מבקשים אימייל, טלפון או סיסמה. מזינים כתובת ומקבלים דוח."),
+    ("מה אם לעסק אין אתר?",
+     "אפשר להזין דף פייסבוק, אינסטגרם, Wolt או גוגל מפות. הבדיקה קוראת רק את הדף הזה."),
+    ("הבדיקה משנה משהו באתר שלי?",
+     "לא. היא קוראת את האתר כמו מבקר רגיל, מזדהה בשם ומכבדת את הכללים שהאתר קבע לסורקים."),
+    ("מי יכול לראות את הדוח?",
+     "רק מי שיש לו אחד משני הקישורים של הדוח: הקישור האישי, או קישור לקריאה בלבד שאפשר "
+     "להעביר הלאה. מהקישור האישי אפשר גם למחוק את הבדיקה."),
+    ("איך מחושב הציון?",
+     "מתחילים מ-100, וכל בעיה שנמדדה באתר מורידה נקודות לפי החומרה שלה. כשיש בדיקת AI, "
+     "הציון הסופי הוא הממוצע של ציון האתר ושל חלק התשובות שמזכירות את העסק."),
+]
+DESCRIPTION = ("בדיקה קצרה: איך האתר שלך נראה לגוגל, ומה עוזרי ה-AI עונים כששואלים על התחום "
+               "שלך. ציון אחד ושלוש משימות לתיקון.")
 ERRORS = {
     400: ("הבקשה לא תקינה", "משהו בבקשה חסר או שגוי. אפשר להתחיל בדיקה חדשה."),
     403: ("אין הרשאה לפעולה הזו", "רק הקישור האישי של הבדיקה יכול לעשות את זה."),
@@ -86,12 +113,21 @@ def _slug(site: str, page: str = "") -> str:
 
 
 def create_app(db_path: str = "bvm.sqlite3", allow_private: bool = False,
-               background: bool = True, collectors=None, contact: str | None = None) -> Flask:
+               background: bool = True, collectors=None, contact: str | None = None,
+               public_url: str | None = None) -> Flask:
     """collectors: optional function (cfg) -> list, used by tests to avoid real requests.
     contact: the address people write to about their data, shown on the privacy page.
     Taken from HILITE_CONTACT when not given; the page shows none rather than a made-up one.
+    public_url: the address the site is reached at (https://hilite.example), for the links
+    search engines are given. Taken from HILITE_URL; without one, the address the visitor
+    asked for is used.
     """
     app = Flask(__name__)
+    app.config["MAX_CONTENT_LENGTH"] = MAX_FORM_BYTES
+    app.config["MAX_FORM_MEMORY_SIZE"] = MAX_FORM_BYTES
+    app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 86400   # fonts and the logo: a day in the browser
+    public_url = os.environ.get("HILITE_URL", "") if public_url is None else public_url
+    public_url = public_url.strip().rstrip("/")
     # allow_private is development mode: scans of this machine are allowed, reports open by
     # their number and the form lists every check. For real visitors a report opens only
     # with one of its two secret links, and nobody's checks are listed.
@@ -106,6 +142,20 @@ def create_app(db_path: str = "bvm.sqlite3", allow_private: bool = False,
 
     def store() -> Store:
         return Store(db_path)
+
+    def nonce() -> str:
+        """The mark this answer's own scripts carry (see POLICY). Made once per request."""
+        if "nonce" not in g:
+            g.nonce = secrets.token_urlsafe(16)
+        return g.nonce
+
+    @app.context_processor
+    def for_every_page() -> dict:
+        return {"nonce": nonce()}
+
+    def absolute(path: str) -> str:
+        """A full address of one of our own pages, for search engines."""
+        return (public_url or request.url_root.rstrip("/")) + path
 
     def work(run_id: int, cfg: ClientConfig) -> None:
         notebook = store()
@@ -213,7 +263,11 @@ def create_app(db_path: str = "bvm.sqlite3", allow_private: bool = False,
         headers.setdefault("Referrer-Policy", "same-origin")
         headers.setdefault("X-Frame-Options", "DENY")          # no "delete" button in a frame
         headers.setdefault("X-Content-Type-Options", "nosniff")
-        headers.setdefault("Content-Security-Policy", POLICY)
+        headers.setdefault("Content-Security-Policy", POLICY.format(nonce=nonce()))
+        headers.setdefault("Permissions-Policy", NO_DEVICE_ACCESS)
+        headers.setdefault("Cross-Origin-Opener-Policy", "same-origin")
+        if request.is_secure:                                  # keep returning visitors on https
+            headers.setdefault("Strict-Transport-Security", "max-age=31536000")
         if request.path.startswith(("/runs", "/check", "/scan")):
             headers.setdefault("X-Robots-Tag", "noindex, nofollow")
         if request.path.startswith("/runs"):
@@ -232,8 +286,25 @@ def create_app(db_path: str = "bvm.sqlite3", allow_private: bool = False,
 
     @app.get("/robots.txt")
     def robots():
-        rules = "User-agent: *\nDisallow: /runs/\nDisallow: /scan\nDisallow: /check\n"
+        rules = ("User-agent: *\nDisallow: /runs/\nDisallow: /scan\nDisallow: /check\n"
+                 f"\nSitemap: {absolute('/sitemap.xml')}\n")
         return rules, 200, {"Content-Type": "text/plain; charset=utf-8"}
+
+    @app.get("/sitemap.xml")
+    def sitemap():
+        """The pages meant to be found. Reports and the form are private and are left out."""
+        pages = "".join(f"<url><loc>{escape(absolute(path))}</loc></url>"
+                        for path in ("/", "/privacy"))
+        body = ('<?xml version="1.0" encoding="UTF-8"?>\n'
+                f'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{pages}</urlset>\n')
+        return body, 200, {"Content-Type": "application/xml; charset=utf-8"}
+
+    @app.get("/llms.txt")
+    def llms():
+        """What the site is, in plain text, for AI assistants that read such a file."""
+        return (render_template("llms.txt", home=absolute("/"), privacy=absolute("/privacy"),
+                                check=absolute("/check"), faq=FAQ),
+                200, {"Content-Type": "text/plain; charset=utf-8"})
 
     @app.get("/favicon.ico")
     def favicon():
@@ -241,11 +312,24 @@ def create_app(db_path: str = "bvm.sqlite3", allow_private: bool = False,
 
     @app.get("/")
     def home():
-        return render_template("landing.html")
+        address = absolute("/")
+        # The same facts the page shows, in the form search engines and AI read.
+        about = {"@context": "https://schema.org", "@graph": [
+            {"@type": "WebSite", "@id": address + "#site", "url": address, "name": "Hilite",
+             "inLanguage": "he", "description": DESCRIPTION},
+            {"@type": "WebApplication", "@id": address + "#app", "name": "Hilite",
+             "url": absolute("/check"), "applicationCategory": "BusinessApplication",
+             "operatingSystem": "Web", "inLanguage": "he", "description": DESCRIPTION},
+            {"@type": "FAQPage", "@id": address + "#faq", "inLanguage": "he", "mainEntity": [
+                {"@type": "Question", "name": question,
+                 "acceptedAnswer": {"@type": "Answer", "text": answer}}
+                for question, answer in FAQ]}]}
+        return render_template("landing.html", canonical=address, about=about, faq=FAQ,
+                               description=DESCRIPTION)
 
     @app.get("/privacy")
     def privacy():
-        return render_template("privacy.html", contact=contact)
+        return render_template("privacy.html", contact=contact, canonical=absolute("/privacy"))
 
     @app.get("/check")
     def check():
@@ -366,6 +450,7 @@ def create_app(db_path: str = "bvm.sqlite3", allow_private: bool = False,
                        if owner else ""),
             # The owner's browser keeps its own list of checks (see check.html).
             remember={"id": run_id, "name": cfg.name or cfg.site,
-                      "date": day.strftime("%d.%m.%Y")} if owner and not open_reports else None)
+                      "date": day.strftime("%d.%m.%Y")} if owner and not open_reports else None,
+            nonce=nonce())
 
     return app

@@ -29,6 +29,7 @@ PAGES = ["/", "/check", "/privacy", "/runs/1"]
 def test_no_page_calls_another_company(client, path):
     html = client.get(path).get_data(as_text=True)
     outside = set(re.findall(r"""(?:src|href|action)=["'](?:https?:)?//([^/"']+)""", html))
+    outside.discard("localhost")                     # the page naming its own address
     assert outside == set(), outside                 # no font service, tracker or widget
 
 

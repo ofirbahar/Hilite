@@ -134,7 +134,7 @@ def test_the_address_keeps_what_identifies_the_page():
 
 def test_the_report_shows_how_the_score_was_reached():
     findings = list(found(page("/", description="", images_missing_alt=2),
-                          ai_crawlers_blocked=["GPTBot"], has_sitemap=False).values())
+                          ai_crawlers_blocked=["OAI-SearchBot"], has_sitemap=False).values())
     rows = breakdown(findings)
     assert [(key, points) for key, _, points in rows] == [
         ("ai-crawlers-blocked", 15), ("missing-description", 5), ("image-alt", 3)]   # no list of pages: free

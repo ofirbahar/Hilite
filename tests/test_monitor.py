@@ -55,7 +55,7 @@ def test_crawler_reports_site_level_facts(cfg):
     assert site_fact.data == {
         "has_robots_txt": True,
         "has_sitemap": False,
-        "ai_crawlers_blocked": ["GPTBot"],
+        "ai_crawlers_blocked": ["OAI-SearchBot"],
     }
 
 
@@ -81,7 +81,7 @@ def test_analyzer_finds_the_planted_problems(findings, site):
     }
     assert findings["check-noindex"].evidence == [site + "/pricing"]
     assert findings["missing-title"].evidence == [site + "/about"]
-    assert findings["ai-crawlers-blocked"].evidence == ["GPTBot"]
+    assert findings["ai-crawlers-blocked"].evidence == ["OAI-SearchBot"]
     assert site + "/missing" in findings["broken-links"].evidence[0]
     assert site + "/slow" in findings["slow-pages"].evidence[0]
 

@@ -152,7 +152,11 @@ checked, at the plain address, and the report's first tasks include fixing the c
 - **Limits and protection.** One visitor may start 10 checks in 10 minutes, three checks
   run at once, a second press on a button does nothing, pages cannot be framed and load
   nothing from other sites, reports are marked noindex and no-store, and the secrets in
-  links are kept out of the server log. Behind a proxy, pass the visitor's real address
+  links are kept out of the server log. Only the site's own scripts run: each answer
+  carries a one-time mark and a script without it is refused by the browser, so text from
+  a scanned site or an AI answer can never run. A form larger than 64 KB is refused. A
+  page that arrives drop by drop is cut off after 30 seconds, and a site's robots.txt is
+  matched in a way that cannot be made to run for hours. Behind a proxy, pass the visitor's real address
   to the app (ProxyFix), or the limit counts everyone as one visitor.
 - **Deleting for someone who lost their link:** `python -m bvm delete 12`.
 - **Checks made before personal links existed:** `python -m bvm link 12` prints a personal
@@ -163,6 +167,28 @@ checked, at the plain address, and the report's first tasks include fixing the c
 - **Contact address.** Set `HILITE_CONTACT` (or `python -m bvm web --contact you@example.com`)
   and the privacy page shows it for questions and deletion requests. With nothing set, the
   page shows no address.
+
+- **The site's own address.** Set `HILITE_URL` (for example `https://hilite.example`) and
+  the home page's canonical link, `/sitemap.xml`, `/robots.txt` and `/llms.txt` use it.
+  With nothing set they use the address the visitor asked for.
+
+## The site passes its own check
+
+The home page carries a description, a canonical link, one main heading, and its details
+for search engines (JSON-LD: the site, the app, and the questions and answers shown on the
+page). `/sitemap.xml` lists the two public pages, `/robots.txt` names it, and `/llms.txt`
+says in plain text what the site is. A test reads the home page with Hilite's own reader
+and fails if it would report a gap.
+
+## AI crawlers: two kinds
+
+A site can close itself to the crawlers that fetch pages for an AI answer (OAI-SearchBot,
+ChatGPT-User, PerplexityBot, Perplexity-User, Claude-SearchBot, Claude-User) or to the ones
+that collect text for training (GPTBot, ClaudeBot, Google-Extended). Only the first kind
+keeps a business out of the answers, so only it costs points ("להסיר חסימת AI"). A site
+closed to training alone gets "לבדוק את חסימת אימון ה-AI", which costs nothing. This
+changed the formula (version 4): run `python -m bvm rescore` once so older checks can be
+compared with new ones.
 
 robots.txt is read the way search engines read it (the most specific rule wins), not in
 file order, so "what Google may read" matches what Google does.

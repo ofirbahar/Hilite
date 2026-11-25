@@ -8,7 +8,7 @@
   </div>
 
   {% if deleted %}<p class="done" role="status">הבדיקה נמחקה.</p>
-  <script>/* Said once: a refresh or a bookmark of this page must not say it again. */
+  <script{% if nonce %} nonce="{{ nonce }}"{% endif %}>/* Said once: a refresh or a bookmark of this page must not say it again. */
   try {
     localStorage.setItem('hilite-checks', JSON.stringify(JSON.parse(
       localStorage.getItem('hilite-checks') || '[]').filter(function (check) { return check.id !== {{ deleted }}; })));
@@ -69,7 +69,7 @@
     <h2>הבדיקות שלך במכשיר הזה</h2>
     <ul class="rows runs"></ul>
   </section>
-  <script>
+  <script{% if nonce %} nonce="{{ nonce }}"{% endif %}>
   (function () {
     var mine = [];
     try { mine = JSON.parse(localStorage.getItem('hilite-checks') || '[]'); } catch (error) {}

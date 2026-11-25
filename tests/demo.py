@@ -101,6 +101,9 @@ def main(out_dir: str) -> None:
     waiting = client.get(f"/runs/{waiting_id}").get_data(as_text=True)
 
     head = landing.split("</head>", 1)[0]
+    # The demo is a file with no address of its own, so it names none to search engines.
+    head = re.sub(r'<link rel="canonical"[^>]*>\s*|<meta property="og:url"[^>]*>\s*'
+                  r'|<script type="application/ld\+json">.*?</script>', "", head, flags=re.S)
     bar = landing.split("<body>", 1)[1].split("</header>", 1)[0] + "</header>"
     report = re.sub(r'<section class="after">.*?</section>', "", report, flags=re.S)
     report_body = (_body(report)
@@ -109,7 +112,7 @@ def main(out_dir: str) -> None:
                    .replace("<span>Acme</span>", "<span data-biz>Acme</span>")
                    .replace('<div class="ring"', '<span class="site">הדגמה. הציון והמשימות הם נתוני דוגמה.</span>\n    <div class="ring"', 1))
     # The demo has no server to ask, so the waiting screen's polling script is left out.
-    waiting_body = re.sub(r"<script>.*?</script>", "", _body(waiting), flags=re.S)
+    waiting_body = re.sub(r"<script[^>]*>.*?</script>", "", _body(waiting), flags=re.S)
     waiting_body = waiting_body.replace("בודקים את Acme", 'בודקים את <span data-biz>Acme</span>')
     # Nothing is scanned here, and every visitor gets the same sample report. Say so where
     # it cannot be missed, so the fixed score is never taken for a real result.

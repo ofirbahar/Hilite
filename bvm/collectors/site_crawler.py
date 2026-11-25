@@ -22,9 +22,17 @@ from ..robots import Rules, looks_like_robots
 
 NAME = "site-crawler"
 USER_AGENT = "HiliteBot/1.0 (site check; identifies itself and obeys robots.txt)"
-AI_CRAWLERS = ["GPTBot", "ClaudeBot", "PerplexityBot", "Google-Extended"]
+# The crawlers an AI assistant sends to find and read pages for its answers. A site that
+# closes itself to these is left out of the answers.
+AI_SEARCH = ["OAI-SearchBot", "ChatGPT-User", "PerplexityBot", "Perplexity-User",
+             "Claude-SearchBot", "Claude-User"]
+# The crawlers that collect text to train models on. Closing a site to these is a choice
+# many owners make on purpose, and it does not keep the site out of the answers.
+AI_TRAINING = ["GPTBot", "ClaudeBot", "Google-Extended"]
+AI_CRAWLERS = AI_SEARCH + AI_TRAINING
 TIMEOUT = 15
 MAX_BYTES = 8_000_000      # never read more than this of one page; shop pages run to megabytes
+MAX_READ_SECONDS = 30      # nor for longer: a server that sends a page drop by drop is cut off
 MAX_REDIRECTS = 5
 MAX_RENDERED = 20          # pages opened in a real browser per scan; each takes seconds
 MAX_WAIT_SECONDS = 10      # the longest we wait when a site asks us to slow down
@@ -405,7 +413,7 @@ class SiteCrawler:
                 if any(kind in ctype for kind in ("html", "text", "xml")):
                     for chunk in response.iter_content(65536):
                         body += chunk
-                        if len(body) >= MAX_BYTES:
+                        if len(body) >= MAX_BYTES or time.monotonic() - started > MAX_READ_SECONDS:
                             break
                 return Fetched(
                     status=response.status_code, url=current, content_type=ctype,

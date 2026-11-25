@@ -70,11 +70,13 @@ def changes(previous: dict | None, value: int | None, findings: list[Finding],
 def render_report(cfg: ClientConfig, result: RunResult, today: date | None = None,
                   back_url: str = "", home_url: str = "", previous: dict | None = None,
                   again_url: str = "", delete_url: str = "", share_url: str = "",
-                  remember: dict | None = None) -> str:
+                  remember: dict | None = None, nonce: str = "") -> str:
     """previous: the last check of the same business, for the "what changed" lines:
     {"date", "score", "findings", "parts"}.
     again_url, delete_url: where the report's two buttons post to; empty hides the button.
-    share_url: the report's plain address, shown to the owner as the one to pass on."""
+    share_url: the report's plain address, shown to the owner as the one to pass on.
+    nonce: the mark the page's own scripts carry when the site serves it (see web.POLICY);
+    a report written to a file has none."""
     scanned = measured(result.facts, result.findings)
     ai = summarize(cfg, result.facts)
     value = final_score(cfg, result.facts, result.findings, result.failures)
@@ -103,6 +105,7 @@ def render_report(cfg: ClientConfig, result: RunResult, today: date | None = Non
                                                    if urlparse(share_url).query else "")
                     if share_url else ""),
         remember=remember,
+        nonce=nonce,
         site_part=site_score(result.findings),
         capped=any(f.key in CAPPED for f in result.findings),
         scanned=scanned,

@@ -25,15 +25,38 @@ def _spelling(path: str) -> str:
     return quote(unquote(path), safe="/*$?&=:@+,;!~'()-._")
 
 
-def _pattern(path: str) -> re.Pattern:
-    anchored = path.endswith("$")
-    body = ".*".join(re.escape(part) for part in path.rstrip("$").split("*"))
-    return re.compile(body + ("$" if anchored else ""))
+class _Pattern:
+    """One Allow or Disallow path. `match` says whether an address starts with it.
+
+    The file comes from the site being checked, so it is matched by walking the address
+    once. A regular expression built from it can be made to run for hours by a line such
+    as "/*a*a*a*a*a*a*a*a$z", and one such site would then hold a scan for good.
+    """
+
+    def __init__(self, path: str):
+        self.anchored = path.endswith("$")
+        self.first, *self.rest = path.rstrip("$").split("*")
+
+    def match(self, path: str) -> bool:
+        if not path.startswith(self.first):
+            return False
+        if not self.rest:
+            return not self.anchored or len(path) == len(self.first)
+        at = len(self.first)
+        for part in self.rest[:-1]:           # each piece at the first place it fits
+            found = path.find(part, at)
+            if found < 0:
+                return False
+            at = found + len(part)
+        last = self.rest[-1]
+        if self.anchored:
+            return len(path) - len(last) >= at and path.endswith(last)
+        return path.find(last, at) >= 0
 
 
 class Rules:
     def __init__(self, text: str):
-        self.groups: dict[str, list[tuple[bool, str, re.Pattern]]] = {}
+        self.groups: dict[str, list[tuple[bool, str, _Pattern]]] = {}
         self.sitemaps: list[str] = []
         agents: list[str] = []
         open_group = False            # still reading the "User-agent" lines of a group
@@ -55,7 +78,7 @@ class Rules:
                 if value:             # an empty Disallow means "nothing is disallowed"
                     value = _spelling(value)
                     for agent in agents:
-                        self.groups[agent].append((field == "allow", value, _pattern(value)))
+                        self.groups[agent].append((field == "allow", value, _Pattern(value)))
             elif field == "sitemap":
                 self.sitemaps.append(value)
 

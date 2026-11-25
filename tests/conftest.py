@@ -31,7 +31,7 @@ PRICING = """<html><head><title>Acme Home</title>
 SLOW = """<html><head><title>Slow page</title><meta name="description" content="Slow.">
 </head><body><h1>Slow</h1></body></html>"""
 
-ROBOTS = "User-agent: *\nDisallow: /private/\n\nUser-agent: GPTBot\nDisallow: /\n"
+ROBOTS = "User-agent: *\nDisallow: /private/\n\nUser-agent: OAI-SearchBot\nDisallow: /\n"
 
 PAGES = {
     "/": (200, "text/html", HOME),

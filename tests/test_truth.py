@@ -285,3 +285,24 @@ def test_the_browser_has_a_time_budget_for_one_scan(monkeypatch):
     monkeypatch.setattr(render, "available", lambda: True)
     crawler._render_seconds = module.RENDER_SECONDS
     assert crawler._render(SITE + "/") is None
+
+
+def test_closing_a_site_to_ai_training_is_not_called_hiding_from_ai():
+    """A site that keeps its text out of model training can still be read for answers, and
+    many owners choose exactly that. It is a thing to look at, and costs no points."""
+    from bvm.scoring import breakdown
+    from tests.test_accuracy import found as findings, page as a_page
+
+    def found(blocked):
+        return findings(a_page("/"), ai_crawlers_blocked=blocked)
+
+    training = found(["GPTBot", "ClaudeBot", "Google-Extended"])
+    assert "ai-crawlers-blocked" not in training
+    assert training["check-ai-training-blocked"].evidence == ["GPTBot", "ClaudeBot", "Google-Extended"]
+    assert not breakdown(list(training.values()))                 # nothing lost for it
+    both = found(["OAI-SearchBot", "GPTBot"])
+    assert "check-ai-training-blocked" not in both
+    assert dict((key, lost) for key, _, lost in breakdown(list(both.values())))["ai-crawlers-blocked"] == 15
+    # A check saved before the two kinds were told apart named PerplexityBot, which reads for answers.
+    assert "ai-crawlers-blocked" in found(["PerplexityBot"])
+    assert not {"ai-crawlers-blocked", "check-ai-training-blocked"} & set(found([]))

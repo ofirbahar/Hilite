@@ -245,3 +245,72 @@ def test_the_privacy_page_says_what_the_browser_keeps_and_who_can_read_a_report(
     assert "במכשיר שלך" in text and "הבדיקות האחרונות מופיעות בעמוד הבדיקה" not in text
     assert "מי שיש לו את כתובת הדוח יכול לפתוח אותו" not in text
     assert "קישור לקריאה" in text
+
+
+# --- only our own scripts run, and the site has what it asks of others ---------------------
+
+def test_a_script_runs_only_with_the_mark_made_for_that_answer(tmp_path):
+    client = public(tmp_path)
+    marks = set()
+    for path in ("/", "/check", "/privacy", start(client)):
+        answer = client.get(path)
+        policy = answer.headers["Content-Security-Policy"]
+        script_rule = re.search(r"script-src ([^;]+)", policy).group(1)
+        assert "unsafe-inline" not in script_rule and "object-src 'none'" in policy, path
+        mark = re.search(r"'nonce-([\w-]{16,})'", script_rule).group(1)
+        marks.add(mark)
+        # every script the page carries has the mark; the details for search engines are data
+        scripts = re.findall(r"<script([^>]*)>", answer.get_data(as_text=True))
+        assert scripts and all(f'nonce="{mark}"' in s or "application/ld+json" in s
+                               for s in scripts), path
+        assert "camera=()" in answer.headers["Permissions-Policy"]
+        assert answer.headers["Cross-Origin-Opener-Policy"] == "same-origin"
+        assert "Strict-Transport-Security" not in answer.headers       # plain http here
+    assert len(marks) == 4                                             # a new one every time
+    secure = client.get("/", base_url="https://localhost")
+    assert "max-age" in secure.headers["Strict-Transport-Security"]
+
+
+def test_a_form_far_larger_than_ours_is_refused(tmp_path):
+    client = public(tmp_path)
+    assert client.post("/scan", data={"site": "example.com", "questions": "x" * 200_000}).status_code == 413
+
+
+def test_the_site_has_what_it_checks_other_sites_for(tmp_path):
+    import json
+
+    client = public(tmp_path, public_url="https://hilite.example/")
+    home = client.get("/").get_data(as_text=True)
+    assert '<link rel="canonical" href="https://hilite.example/">' in home
+    data = json.loads(re.search(r'<script type="application/ld\+json">(.*?)</script>', home, re.S).group(1))
+    kinds = {node["@type"]: node for node in data["@graph"]}
+    assert set(kinds) == {"WebSite", "WebApplication", "FAQPage"}
+    asked = kinds["FAQPage"]["mainEntity"]
+    assert len(asked) >= 5
+    for question in asked:                       # what search engines are told is on the page
+        assert question["name"] in home and question["acceptedAnswer"]["text"] in home
+    assert 'rel="canonical" href="https://hilite.example/privacy"' in client.get("/privacy").get_data(as_text=True)
+
+    robots = client.get("/robots.txt").get_data(as_text=True)
+    assert "Sitemap: https://hilite.example/sitemap.xml" in robots
+    sitemap = client.get("/sitemap.xml")
+    assert sitemap.headers["Content-Type"].startswith("application/xml")
+    listed = re.findall(r"<loc>([^<]+)</loc>", sitemap.get_data(as_text=True))
+    assert listed == ["https://hilite.example/", "https://hilite.example/privacy"]   # no reports
+    llms = client.get("/llms.txt")
+    assert llms.headers["Content-Type"].startswith("text/plain")
+    text = llms.get_data(as_text=True)
+    assert text.startswith("# Hilite") and "https://hilite.example/privacy" in text
+    assert "&#" not in text and "&amp;" not in text                    # plain text, not HTML
+
+
+def test_our_own_home_page_passes_our_own_check(tmp_path):
+    """Hilite's home page, read by Hilite's own reader: nothing it reports as a gap."""
+    from bvm.collectors.site_crawler import parse_page
+
+    home = public(tmp_path).get("/").get_data(as_text=True)
+    facts = parse_page("https://hilite.example/", home)
+    assert facts["title"] and facts["description"] and len(facts["h1"]) == 1
+    assert facts["has_structured_data"] and facts["data_name"] == "Hilite"
+    assert facts["images_missing_alt"] == 0 and facts["lang"] == "he"
+    assert facts["canonical"] and "noindex" not in facts["meta_robots"]

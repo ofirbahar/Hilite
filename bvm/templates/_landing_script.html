@@ -1,4 +1,4 @@
-<script>
+<script{% if nonce %} nonce="{{ nonce }}"{% endif %}>
 (function () {
   'use strict';
   var still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;

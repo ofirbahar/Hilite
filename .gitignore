@@ -5,3 +5,5 @@ reports/
 .venv/
 # Internal team documents: kept out of the public repository
 docs/internal/
+# Marketing working notes for the team
+.agents/

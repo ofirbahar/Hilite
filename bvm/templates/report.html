@@ -167,7 +167,7 @@
 </main>
 {% include "_once.html" %}
 {% if remember %}
-<script>
+<script{% if nonce %} nonce="{{ nonce }}"{% endif %}>
 /* This browser's own list of checks. It stays on the device and is never sent to us. */
 (function () {
   try {
@@ -181,7 +181,7 @@
 </script>
 {% endif %}
 {% if share_path %}
-<script>
+<script{% if nonce %} nonce="{{ nonce }}"{% endif %}>
 /* The server may sit behind another address. The browser knows the one the visitor is on. */
 (function () {
   var el = document.querySelector('[data-share]');

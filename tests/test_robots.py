@@ -32,6 +32,22 @@ def test_wildcards_and_end_anchor():
     assert r.can_fetch("b", "https://x.test/search")
 
 
+def test_a_hostile_rules_file_cannot_hold_a_scan():
+    """A site's own robots.txt must not be able to keep the check busy for hours."""
+    import time
+    r = rules("User-agent: *\nDisallow: /" + "*a" * 40 + "$z\n")
+    started = time.monotonic()
+    assert r.can_fetch("b", "https://x.test/" + "a" * 5000)       # ends in "a", not in "z"
+    assert time.monotonic() - started < 1
+    # the same reading as before for patterns with several wildcards
+    r = rules("User-agent: *\nDisallow: /a*b*c$\nDisallow: /x**y\nDisallow: /p*$\n")
+    assert not r.can_fetch("b", "https://x.test/a1b2c") and r.can_fetch("b", "https://x.test/a1b2cd")
+    assert r.can_fetch("b", "https://x.test/acb")                 # the pieces come in order
+    assert not r.can_fetch("b", "https://x.test/abcbc")           # the end may be a later "c"
+    assert not r.can_fetch("b", "https://x.test/xy") and not r.can_fetch("b", "https://x.test/x-y-")
+    assert not r.can_fetch("b", "https://x.test/p") and not r.can_fetch("b", "https://x.test/pq")
+
+
 def test_a_bot_follows_its_own_group_and_only_that_one():
     r = rules("User-agent: *\nDisallow: /private\n\nUser-agent: GPTBot\nUser-agent: ClaudeBot\n"
               "Disallow: /\n\nUser-agent: Googlebot\nAllow: /\n")
