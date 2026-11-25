@@ -131,7 +131,9 @@ class ApiHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
         ApiHandler.seen.append({"path": self.path, "headers": dict(self.headers), "body": body})
-        if self.path == "/v1/messages":
+        if self.path == "/v1/messages" and body.get("tools"):
+            reply = ApiHandler.searching(body)
+        elif self.path == "/v1/messages":
             reply = {"content": [{"type": "text", "text": "Use Acme."}]}
         else:
             reply = {"choices": [{"message": {"content": "Use Globex."}}],
@@ -145,6 +147,28 @@ class ApiHandler(BaseHTTPRequestHandler):
 
     def log_message(self, *args):
         pass
+
+    @staticmethod
+    def searching(body: dict) -> dict:
+        """Claude with web search, as its API answers: the turn pauses once part-way, and
+        the answer's sentences carry the pages they rest on."""
+        searched = [
+            {"type": "server_tool_use", "id": "s1", "name": "web_search", "input": {"query": "q"}},
+            {"type": "web_search_tool_result", "tool_use_id": "s1", "content": [
+                {"type": "web_search_result", "url": "https://unused.test/x", "title": "X"},
+                {"type": "web_search_result", "url": "https://www.reviews.test/best", "title": "B"}]},
+            {"type": "text", "text": "Looking. "}]
+        if len(body["messages"]) == 1:
+            return {"stop_reason": "pause_turn", "content": searched}
+        return {"stop_reason": "end_turn", "content": [
+            {"type": "text", "text": "Use Acme", "citations": [
+                {"type": "web_search_result_location", "url": "https://www.reviews.test/best"}]},
+            {"type": "text", "text": " or Globex.", "citations": [
+                {"type": "web_search_result_location", "url": "https://blog.test/top"},
+                {"type": "web_search_result_location", "url": "https://www.reviews.test/best"}]},
+            # a search that failed comes back as an object, not a list, and is not an answer
+            {"type": "web_search_tool_result", "tool_use_id": "s2",
+             "content": {"type": "web_search_tool_result_error", "error_code": "max_uses_exceeded"}}]}
 
 
 @pytest.fixture(scope="module")
@@ -171,6 +195,36 @@ def test_providers_send_the_documented_request_shapes(api):
     sent = ApiHandler.seen[1]
     assert sent["path"] == "/chat/completions" and sent["headers"]["Authorization"] == "Bearer k2"
     assert sent["body"]["model"] == "some-model"
+
+
+def test_claude_can_search_the_web_and_name_the_sites_it_used(api):
+    ApiHandler.seen.clear()
+    answer = AnthropicProvider("k1", base_url=api, web_search=True).ask("best widgets?", "il")
+    first, resumed = ApiHandler.seen
+    tool = first["body"]["tools"][0]
+    assert (tool["type"], tool["name"]) == ("web_search_20260209", "web_search")
+    assert 0 < tool["max_uses"] <= 5                               # every search costs money
+    assert tool["user_location"] == {"type": "approximate", "country": "IL"}
+    # the paused turn goes back exactly as it came, after the question
+    assert [m["role"] for m in resumed["body"]["messages"]] == ["user", "assistant"]
+    assert resumed["body"]["messages"][1]["content"][0]["type"] == "server_tool_use"
+    assert answer.text == "Looking. Use Acme or Globex."
+    # only pages the answer cites, each once; a page a search returned and nobody used is not one
+    assert answer.citations == ["https://www.reviews.test/best", "https://blog.test/top"]
+
+    cfg = ClientConfig("Acme", "acme", "https://acme.test", competitors=["Globex"],
+                       buyer_questions=["best widgets?"])
+    fact = AiVisibility([AnthropicProvider("k1", base_url=api, web_search=True)]).collect(cfg)[0]
+    assert fact.data["mentioned"] and fact.data["competitors_mentioned"] == ["Globex"]
+    assert fact.data["cited_domains"] == ["blog.test", "reviews.test"]
+
+    ApiHandler.seen.clear()                                        # off unless asked for
+    AnthropicProvider("k1", base_url=api).ask("q?", "IL")
+    assert "tools" not in ApiHandler.seen[0]["body"]
+    on = providers_from_env({"ANTHROPIC_API_KEY": "a", "BVM_ANTHROPIC_WEB_SEARCH": "1"})[0]
+    off = providers_from_env({"ANTHROPIC_API_KEY": "a", "BVM_ANTHROPIC_WEB_SEARCH": "0"})[0]
+    assert on.web_search and not off.web_search
+    assert not providers_from_env({"ANTHROPIC_API_KEY": "a"})[0].web_search
 
 
 def test_assistants_are_switched_on_only_by_their_keys():

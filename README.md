@@ -207,6 +207,7 @@ has a key. Each question costs money, so runs are capped at 25 questions.
 
 ```bash
 export ANTHROPIC_API_KEY=...                                  # Claude
+export BVM_ANTHROPIC_WEB_SEARCH=1                             # optional: Claude searches the web first
 export OPENAI_API_KEY=...      BVM_OPENAI_MODEL=<model name>   # ChatGPT
 export PERPLEXITY_API_KEY=...  BVM_PERPLEXITY_MODEL=<model name>
 ```
@@ -214,6 +215,12 @@ export PERPLEXITY_API_KEY=...  BVM_PERPLEXITY_MODEL=<model name>
 Model names change often, so OpenAI and Perplexity need one set explicitly. Check each
 provider's current model list. Perplexity moved its chat API to a newer "Agent API" in
 2026, so its address (`BVM_PERPLEXITY_URL`) and request format may need updating.
+
+With `BVM_ANTHROPIC_WEB_SEARCH=1` Claude searches the web before it answers (up to 3
+searches a question, as a buyer in the check's country), so its answer is closer to what a
+person sees in Claude's app and it names the sites it relied on. Those feed the "sites the
+AI trusts" finding. Anthropic bills each search on top of the answer, and an answer takes
+longer, so it is off unless set.
 
 Known limit: a plain API answer is not identical to what a person sees in the
 assistant's own app, which may search the web. Only assistants whose API returns
