@@ -1,5 +1,5 @@
 <script{% if nonce %} nonce="{{ nonce }}"{% endif %}>
-/* A second press on a button that starts a check or deletes one does nothing. */
+{# A second press on a button that starts a check or deletes one does nothing. #}
 (function () {
   document.addEventListener('submit', function (event) {
     var button = event.target.querySelector('[data-once]');
@@ -7,7 +7,7 @@
     if (button.disabled) { event.preventDefault(); return; }
     setTimeout(function () { button.disabled = true; button.setAttribute('aria-busy', 'true'); }, 0);
   });
-  /* Coming back with the Back button must not leave the button locked. */
+  {# Coming back with the Back button must not leave the button locked. #}
   window.addEventListener('pageshow', function () {
     document.querySelectorAll('[data-once]').forEach(function (button) {
       button.disabled = false; button.removeAttribute('aria-busy');

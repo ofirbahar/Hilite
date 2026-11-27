@@ -16,7 +16,7 @@
   <p>בדרך כלל דקה עד שתיים. הדוח ייפתח כאן לבד.</p>
 </main>
 <script{% if nonce %} nonce="{{ nonce }}"{% endif %}>
-/* Ask the server every two seconds; open the report the moment it is ready. */
+{# Ask the server every two seconds; open the report the moment it is ready. #}
 (function () {
   if (!window.fetch || location.protocol === 'file:') return;
   var timer = setInterval(function () {

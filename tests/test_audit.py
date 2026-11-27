@@ -314,3 +314,16 @@ def test_our_own_home_page_passes_our_own_check(tmp_path):
     assert facts["has_structured_data"] and facts["data_name"] == "Hilite"
     assert facts["images_missing_alt"] == 0 and facts["lang"] == "he"
     assert facts["canonical"] and "noindex" not in facts["meta_robots"]
+
+
+def test_the_pages_carry_nothing_a_visitor_does_not_need(tmp_path):
+    """No notes to ourselves in what is sent, no moving backdrop, and a picture for sharing."""
+    client = public(tmp_path, public_url="https://hilite.example")
+    for path in ("/", "/check", "/privacy", start(client)):
+        html = client.get(path).get_data(as_text=True)
+        assert "/*" not in html and "{#" not in html, path          # our notes stay in the source
+        assert "<canvas" not in html and "backdrop-filter" not in html, path
+    home = client.get("/").get_data(as_text=True)
+    assert '<meta property="og:image" content="https://hilite.example/static/share.png">' in home
+    picture = client.get("/static/share.png")
+    assert picture.status_code == 200 and picture.data[1:4] == b"PNG"

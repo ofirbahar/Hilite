@@ -169,7 +169,7 @@
 {% include "_once.html" %}
 {% if remember %}
 <script{% if nonce %} nonce="{{ nonce }}"{% endif %}>
-/* This browser's own list of checks. It stays on the device and is never sent to us. */
+{# This browser's own list of checks. It stays on the device and is never sent to us. #}
 (function () {
   try {
     var mine = JSON.parse(localStorage.getItem('hilite-checks') || '[]')
@@ -177,13 +177,13 @@
     mine.unshift({ id: {{ remember.id }}, name: {{ remember.name|tojson }},
                    date: {{ remember.date|tojson }}, url: location.pathname + location.search });
     localStorage.setItem('hilite-checks', JSON.stringify(mine.slice(0, 20)));
-  } catch (error) { /* storage is off: the personal link still works */ }
+  } catch (error) { {# storage is off: the personal link still works #} }
 })();
 </script>
 {% endif %}
 {% if share_path %}
 <script{% if nonce %} nonce="{{ nonce }}"{% endif %}>
-/* The server may sit behind another address. The browser knows the one the visitor is on. */
+{# The server may sit behind another address. The browser knows the one the visitor is on. #}
 (function () {
   var el = document.querySelector('[data-share]');
   if (el) el.textContent = location.origin + el.getAttribute('data-share');

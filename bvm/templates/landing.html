@@ -8,6 +8,10 @@
 <meta property="og:title" content="Hilite | גוגל ו-AI ממליצים על העסק שלך?">
 <meta property="og:description" content="{{ description }}">
 <meta property="og:locale" content="he_IL">
+<meta property="og:image" content="{{ share_image }}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <script type="application/ld+json">{{ about|tojson }}</script>{% endblock %}
 {% block title %}Hilite | גוגל ו-AI ממליצים על העסק שלך?{% endblock %}
 {% block style %}{% include "_landing_style.html" %}{% endblock %}
@@ -15,7 +19,6 @@
 <main class="landing" id="main">
 
   <section class="hero">
-    <canvas class="dotfield" id="field" aria-hidden="true"></canvas>
     <div class="wrap hero-grid">
       <div class="hero-copy">
         <h1 class="rise" style="--d: 0">גוגל ו-AI ממליצים על העסק שלך?</h1>
@@ -100,15 +103,15 @@
           {% set chevron = '<svg class="ico" viewBox="0 0 14 14" aria-hidden="true"><path d="M9 2.5L4.5 7 9 11.5"/></svg>' %}
           <details open>
             <summary><span class="n">1</span><span class="t">להסיר חסימת AI</span>{{ chevron|safe }}</summary>
-            <div class="inside nested"><p>האתר חוסם את מנועי ה-AI.</p><p class="fix">להסיר את החסימה בהגדרות האתר.</p><p class="by">מי מתקן: בונה האתר</p></div>
+            <div class="inside nested"><p>האתר חוסם את מנועי ה-AI.</p><p class="fix">להסיר את החסימה בהגדרות האתר.</p><p class="by">משפיע על: תשובות AI</p><p class="by">מי מתקן: בונה האתר</p></div>
           </details>
           <details>
             <summary><span class="n">2</span><span class="t">להוסיף כותרות לדפים</span>{{ chevron|safe }}</summary>
-            <div class="inside nested"><p>דף אחד מופיע בגוגל בלי כותרת.</p><p class="fix">לכתוב לכל דף כותרת קצרה.</p><p class="by">מי מתקן: כותב התוכן</p></div>
+            <div class="inside nested"><p>דף אחד מופיע בגוגל בלי כותרת.</p><p class="fix">לכתוב לכל דף כותרת קצרה.</p><p class="by">משפיע על: גוגל ותשובות AI</p><p class="by">מי מתקן: כותב התוכן</p></div>
           </details>
           <details>
             <summary><span class="n">3</span><span class="t">לתקן קישורים שבורים</span>{{ chevron|safe }}</summary>
-            <div class="inside nested"><p>קישור אחד מוביל לדף שגיאה.</p><p class="fix">לעדכן את הקישור לדף שקיים.</p><p class="by">מי מתקן: כותב התוכן</p></div>
+            <div class="inside nested"><p>קישור אחד מוביל לדף שגיאה.</p><p class="fix">לעדכן את הקישור לדף שקיים.</p><p class="by">משפיע על: גוגל ותשובות AI</p><p class="by">מי מתקן: כותב התוכן</p></div>
           </details>
         </div>
       </figure>

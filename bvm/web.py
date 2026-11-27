@@ -325,7 +325,8 @@ def create_app(db_path: str = "bvm.sqlite3", allow_private: bool = False,
                  "acceptedAnswer": {"@type": "Answer", "text": answer}}
                 for question, answer in FAQ]}]}
         return render_template("landing.html", canonical=address, about=about, faq=FAQ,
-                               description=DESCRIPTION)
+                               description=DESCRIPTION,
+                               share_image=absolute(url_for("static", filename="share.png")))
 
     @app.get("/privacy")
     def privacy():
