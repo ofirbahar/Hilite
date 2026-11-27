@@ -34,7 +34,7 @@ ANSWERS = {
 
 
 # The demo is one file with no server behind it, so its fonts cannot come from /static.
-FONTS = ('<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900'
+FONTS = ('<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300..900'
          '&family=IBM+Plex+Sans+Hebrew:wght@400;500;600&display=swap" rel="stylesheet">')
 
 SCRIPT = """
