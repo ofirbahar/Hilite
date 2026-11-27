@@ -52,7 +52,7 @@ svg.ico { width: 14px; height: 14px; flex: none; stroke: currentColor; fill: non
 .bar .brand { color: var(--ink); display: inline-flex; align-items: center; min-height: 44px; }
 .logo { height: 30px; width: auto; flex: none; display: block; }
 .bar .go { font-weight: 600; color: var(--ink); min-height: 44px; display: inline-flex; align-items: center;
-  padding: 0 16px; border: 1px solid var(--ink); border-radius: 999px;
+  padding: 0 16px; border: 1px solid var(--ink); border-radius: 8px;
   transition: background-color 160ms ease, color 160ms ease, transform 120ms var(--ease-out); }
 .bar .go:active { transform: scale(0.97); }
 @media (hover: hover) and (pointer: fine) { .bar .go:hover { background: var(--ink); color: var(--paper); } }
@@ -61,19 +61,19 @@ svg.ico { width: 14px; height: 14px; flex: none; stroke: currentColor; fill: non
 
 {# score #}
 .score { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center;
-  background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 32px 24px 28px; box-shadow: var(--shadow); }
+  background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 32px 24px 28px; box-shadow: var(--shadow); }
 .score .who { font-family: var(--display); font-size: 28px; font-weight: 700; line-height: 1.15; overflow-wrap: anywhere; }
 .score .site { font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
 .ring { position: relative; width: 208px; height: 208px; margin: 22px 0 12px; }
 .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
-.ring circle { fill: none; stroke-width: 10; stroke-linecap: round; }
+.ring circle { fill: none; stroke-width: 6; stroke-linecap: round; }
 .ring .track { stroke: var(--fill); }
 .ring .value { stroke-dasharray: 100; animation: draw 1100ms var(--ease-out) both; }
 @keyframes draw { from { stroke-dashoffset: 100; } }
 .ring .num { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .ring b { font-family: var(--display); font-size: 84px; line-height: 0.9; font-weight: 900; font-variant-numeric: lining-nums tabular-nums; }
 .ring small { font-size: 14px; color: var(--muted); margin-top: 8px; }
-.verdict { font-size: 17px; font-weight: 600; padding: 4px 14px; border-radius: 999px; }
+.verdict { font-size: 15px; font-weight: 600; padding: 3px 10px; border-radius: 6px; }
 .good .value { stroke: var(--good-ring); } .good .verdict { color: var(--good); background: #e4f4ea; }
 .warn .value { stroke: var(--warn-ring); } .warn .verdict { color: var(--warn); background: #fcf0d6; }
 .bad .value { stroke: var(--bad-ring); } .bad .verdict { color: var(--bad); background: #fbe6e4; }
@@ -91,7 +91,7 @@ summary .n { font-family: var(--display); font-weight: 900; font-size: 26px; lin
   text-align: center; font-variant-numeric: lining-nums; }
 summary .t { font-weight: 600; flex: 1; min-width: 0; }
 summary .count { font-size: 14px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums;
-  background: var(--fill); border-radius: 999px; padding: 3px 10px; }
+  background: var(--fill); border-radius: 6px; padding: 3px 10px; }
 summary .ico { color: #7a857f; transition: transform 200ms var(--ease-out); }
 details[open] > summary .ico { transform: rotate(-90deg); }
 {# a row opens and closes at its own height, where the browser can animate that #}
@@ -133,7 +133,7 @@ summary:active { opacity: 0.6; }
 .how .sum { border-top: 1px solid var(--line); margin-top: 6px; padding-top: 10px; color: var(--ink); font-weight: 600; }
 .how .sum b { font-weight: 700; }
 .how li small { display: block; font-size: 13px; }
-.since { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px 20px 18px;
+.since { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px 20px 18px;
   display: flex; flex-direction: column; gap: 14px; }
 .since .moved { display: flex; flex-direction: column; gap: 2px; color: var(--muted); font-size: 15px; }
 .since .moved b { color: var(--ink); font-size: 19px; font-weight: 700; }
@@ -165,7 +165,7 @@ input, textarea { font: inherit; color: inherit; background: var(--card); width:
 input:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(27, 59, 255, 0.16); }
 input[dir="ltr"] { text-align: left; }
 input::placeholder, textarea::placeholder { color: #66716c; }
-.btn { font: inherit; font-weight: 600; color: var(--paper); background: var(--ink); border: 0; border-radius: 999px;
+.btn { font: inherit; font-weight: 600; color: var(--paper); background: var(--ink); border: 0; border-radius: 10px;
   min-height: 54px; padding: 0 28px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 10px;
   translate: var(--pull-x, 0) var(--pull-y, 0);
   transition: background-color 160ms ease, transform 120ms var(--ease-out), translate 320ms var(--ease-out); }
