@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#f5f6f2">
+<meta name="theme-color" content="{% block theme %}#f5f6f2{% endblock %}">
 {% block head %}{% endblock %}
 <title>{% block title %}Hilite{% endblock %}</title>
 {% include "_style.html" %}
