@@ -1,12 +1,4 @@
 <style>
-{# The home page opens at night: a dark first screen where the AI's answer is the only lit
-   sheet, and the one yellow thing is what you press. Below it the page is printed paper. #}
-.bar { background: var(--night) var(--grain-light); border-bottom-color: #22302b; }
-.bar .brand { color: var(--night-ink); }
-.bar .logo rect { display: none; }
-.bar .go { color: var(--night-ink); border-color: #5a6963; }
-@media (hover: hover) and (pointer: fine) { .bar .go:hover { background: var(--night-ink); color: var(--night); } }
-.bar :focus-visible, .hero :focus-visible { outline-color: var(--mark); }
 {# The marketing page. One loud moment: the AI answer in the hero, where competitors get
    the highlighter and the business does not. Everything after it is quiet. #}
 .landing { overflow-x: clip; }
@@ -17,8 +9,7 @@
 
 {# hero #}
 .hero { background: var(--night) var(--grain-light); color: var(--night-ink); padding: clamp(56px, 8vw, 112px) 0 clamp(88px, 11vw, 152px); }
-.hero .btn, .close .btn { background: var(--night-ink); color: var(--night); }
-@media (hover: hover) and (pointer: fine) { .hero .btn:hover, .close .btn:hover { background: #fff; } }
+.hero { border-bottom: 1px solid var(--line); }
 .hero-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 56px; align-items: center; }
 .hero-copy { display: flex; flex-direction: column; align-items: flex-start; gap: 22px; }
 .hero h1 { font-size: clamp(44px, 6.6vw, 92px); line-height: 1.02; max-width: 9.5em; }
@@ -47,7 +38,7 @@
 
 {# the demo: an AI answer, then the report it leads to #}
 .demo { position: relative; padding-bottom: 150px; }
-.chat { background: var(--card); color: var(--ink); border-radius: 12px; padding: 18px 22px 52px; box-shadow: 0 40px 80px -40px rgba(0, 0, 0, 0.7);
+.chat { background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; padding: 18px 22px 52px; box-shadow: 0 40px 80px -40px rgba(0, 0, 0, 0.7);
   display: flex; flex-direction: column; gap: 14px; }
 .chat-top, .sheet-top { display: flex; align-items: center; justify-content: space-between; font-size: 14px; }
 .chat-top b, .sheet-top b { font-weight: 600; }
@@ -56,13 +47,13 @@
 [dir="rtl"] .q { border-radius: 10px 10px 3px 10px; }
 .a { font-size: 19px; line-height: 1.75; }
 .a .ln { display: block; }
-.a mark { position: relative; background: none; color: inherit; font-weight: 600; white-space: nowrap; isolation: isolate; margin-inline: 3px; }
+.a mark { position: relative; background: none; color: var(--on-mark); font-weight: 600; white-space: nowrap; isolation: isolate; margin-inline: 3px; }
 .a mark::before { content: ""; position: absolute; inset: 12% -3px 6%; background: var(--mark); border-radius: 3px; z-index: -1;
   transform-origin: 100% 50%; }
 .miss { align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; color: var(--bad); font-weight: 600; }
 
 .result { position: absolute; inset-inline-start: 9%; inset-inline-end: -4%; bottom: 0;
-  background: var(--card); color: var(--ink); border-radius: 12px; padding: 18px 22px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3), 0 40px 70px -30px rgba(0, 0, 0, 0.75);
+  background: var(--card); color: var(--ink); border-radius: 12px; padding: 18px 22px; border: 1px solid #33423c; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3), 0 40px 70px -30px rgba(0, 0, 0, 0.75);
   display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 22px; align-items: center; }
 .result-score { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .result .ring { width: 124px; height: 124px; margin: 0; }
@@ -105,9 +96,9 @@
 .say-text .w { opacity: 0.5; transition: opacity 260ms ease; }
 .say-text .w.on { opacity: 1; }
 {# the marker: a band across the lower part of each word, wide enough to meet its neighbours #}
-.say-text em .w { padding: 0 0.16em; margin: 0 -0.16em; background: linear-gradient(var(--mark), var(--mark)) no-repeat 100% 68% / 0% 52%;
+.say-text em .w { padding: 0 0.16em; margin: 0 -0.16em; background: linear-gradient(var(--mark), var(--mark)) no-repeat 100% 50% / 0% 100%;
   transition: opacity 260ms ease, background-size 320ms var(--ease-out); }
-.say-text em .w.on { background-size: 100% 52%; }
+.say-text em .w.on { background-size: 100% 100%; background-position: 100% 50%; color: var(--on-mark); }
 
 {# sections #}
 .part { padding: clamp(72px, 10vw, 136px) 0; }
@@ -154,7 +145,7 @@
 .close h2 { font-weight: 900; font-size: clamp(44px, 8.4vw, 124px); line-height: 1; }
 .close .btn { min-height: 56px; padding: 0 32px; font-size: 18px; }
 
-.foot { background: var(--night) var(--grain-light); border-top: 1px solid #22302b; color: var(--night-muted); font-size: 14px; padding: 28px 0; }
+.foot { border-top: 1px solid var(--line); color: var(--night-muted); font-size: 14px; padding: 28px 0; }
 .foot .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .foot-logo { color: var(--night-ink); }
 .foot-logo .logo { height: 26px; }
