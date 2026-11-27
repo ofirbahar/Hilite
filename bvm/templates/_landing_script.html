@@ -88,14 +88,5 @@
       window.addEventListener('resize', read);
     }
   }
-
-  {# 3. The comparison bars grow the first time they are seen. #}
-  var bars = document.getElementById('bars');
-  if (bars && !still && 'IntersectionObserver' in window) {
-    var seen = new IntersectionObserver(function (entries) {
-      if (entries[0].isIntersecting) { bars.classList.add('grow'); seen.disconnect(); }
-    }, { threshold: 0.6 });
-    seen.observe(bars);
-  }
 })();
 </script>

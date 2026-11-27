@@ -327,3 +327,11 @@ def test_the_pages_carry_nothing_a_visitor_does_not_need(tmp_path):
     assert '<meta property="og:image" content="https://hilite.example/static/share.png">' in home
     picture = client.get("/static/share.png")
     assert picture.status_code == 200 and picture.data[1:4] == b"PNG"
+
+
+def test_a_first_visit_shows_no_empty_list_of_checks(tmp_path):
+    """The list of this browser's checks is hidden until there is one. A style that sets how
+    the section is laid out must not bring the empty heading back."""
+    html = public(tmp_path).get("/check").get_data(as_text=True)
+    assert 'id="my-checks" hidden' in html
+    assert "[hidden] { display: none !important; }" in html
