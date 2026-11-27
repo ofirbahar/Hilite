@@ -106,7 +106,7 @@ summary:active { opacity: 0.6; }
 .inside .fix { color: var(--ink); }
 .inside .by { font-size: 14px; }
 .tech { font-size: 14px; margin-top: 6px; }
-.tech > summary { display: inline; min-height: 0; padding: 0; color: var(--accent); }
+.tech > summary { display: inline-flex; min-height: 44px; padding: 0; color: var(--accent); }
 .tech ul { padding-top: 6px; overflow-wrap: anywhere; display: flex; flex-direction: column; gap: 2px; }
 .inside.nested { padding-inline-start: calc(1.1ch * 1.53 + 14px); }
 .rows.nested > details:last-child { border-bottom: 0; }
@@ -165,6 +165,9 @@ input, textarea { font: inherit; color: inherit; background: var(--card); width:
 input:focus, textarea:focus { outline: none; border-color: var(--mark); box-shadow: 0 0 0 4px rgba(255, 226, 74, 0.18); }
 input[dir="ltr"] { text-align: left; }
 input::placeholder, textarea::placeholder { color: #93a09a; }
+{# a field the browser fills in keeps the dark ground and the light ink #}
+input:-webkit-autofill, textarea:-webkit-autofill { -webkit-text-fill-color: var(--ink); caret-color: var(--ink);
+  box-shadow: 0 0 0 1000px var(--card) inset; transition: background-color 9999s; }
 .btn { font: inherit; font-weight: 600; color: var(--paper); background: var(--ink); border: 0; border-radius: 10px;
   min-height: 54px; padding: 0 28px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 10px;
   translate: var(--pull-x, 0) var(--pull-y, 0);
@@ -181,8 +184,8 @@ input::placeholder, textarea::placeholder { color: #93a09a; }
 .consent { margin-top: 0; text-align: center; }
 .consent a { text-decoration: underline; }
 .hint { font-size: 14px; color: var(--muted); margin-top: -8px; }
-.extra > summary { display: inline; min-height: 0; padding: 0; color: var(--accent); font-size: 15px; font-weight: 500; }
-.extra[open] > summary { display: block; margin-bottom: 16px; }
+.extra > summary { display: inline-flex; min-height: 44px; padding: 0; color: var(--accent); font-size: 15px; font-weight: 500; }
+.extra[open] > summary { margin-bottom: 8px; }
 .extra .field + .field { margin-top: 16px; }
 .extra .field .hint { margin-top: 6px; }
 .score .guessed { font-size: 13px; max-width: 34ch; text-align: center; }
