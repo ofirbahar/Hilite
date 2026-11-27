@@ -3,65 +3,27 @@
   'use strict';
   var still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  {# 1. The hero demo: play the AI answer once, then offer a replay. #}
-  var demo = document.getElementById('demo');
-  var num = document.getElementById('demo-num');
-  var again = document.getElementById('again');
-  var counting = 0;
-  function count() {
-    var started = null;
-    function frame(now) {
-      if (started === null) started = now;
-      var t = Math.min(1, (now - started) / 1100);
-      num.textContent = Math.round(62 * (1 - Math.pow(1 - t, 4)));
-      if (t < 1) counting = requestAnimationFrame(frame);
-    }
-    counting = requestAnimationFrame(frame);
-  }
-  function play() {
-    cancelAnimationFrame(counting);
-    again.hidden = true;
-    demo.classList.remove('play');
-    void demo.offsetWidth;
-    demo.classList.add('play');
-    num.textContent = '0';
-  }
-  if (demo && !still) {
-    demo.querySelector('.ring .value').addEventListener('animationstart', count);
-    demo.querySelector('.mini li:last-child').addEventListener('animationend', function () { again.hidden = false; });
-    again.addEventListener('click', play);
-  }
-  {# The entrance and the demo start only once the browser is really drawing frames. If it
-     is not (a background tab, a viewer that holds animations), everything simply shows in
-     its finished state after a moment, so the first screen is never left empty. #}
+  {# The entrance starts only once the browser is really drawing frames. If it is not (a
+     background tab, a viewer that holds animations), everything simply shows in its
+     finished state after a moment, so the first screen is never left empty. #}
   var root = document.documentElement, begun = false;
-  function begin() {
-    if (begun) return;
-    begun = true;
-    root.classList.add('go');
-    if (demo) play();
-  }
   if (still) { begun = true; root.classList.add('shown'); }
   else {
-    requestAnimationFrame(function () { requestAnimationFrame(begin); });
-    setTimeout(function () {
-      if (begun) return;
-      begun = true;
-      root.classList.add('shown');
-      if (again) again.hidden = false;
-    }, 1200);
+    requestAnimationFrame(function () { requestAnimationFrame(function () {
+      if (!begun) { begun = true; root.classList.add('go'); }
+    }); });
+    setTimeout(function () { if (!begun) { begun = true; root.classList.add('shown'); } }, 1200);
   }
 
-  {# 2. The statement: words light up as the reader scrolls through them. #}
+  {# The statement: words light up as the reader scrolls through them. #}
   var say = document.getElementById('say');
   if (say) {
     var words = [];
     (function wrap(node) {
       Array.prototype.slice.call(node.childNodes).forEach(function (child) {
         if (child.nodeType === 3) {
-          var parts = child.textContent.split(/(\s+)/);
           var frag = document.createDocumentFragment();
-          parts.forEach(function (part) {
+          child.textContent.split(/(\s+)/).forEach(function (part) {
             if (!part.trim()) { frag.appendChild(document.createTextNode(part)); return; }
             var span = document.createElement('span');
             span.className = 'w';

@@ -19,53 +19,28 @@
 <main class="landing" id="main">
 
   <section class="hero">
-    <div class="wrap hero-grid">
-      <div class="hero-copy">
-        <h1 class="rise" style="--d: 0">גוגל ו-AI ממליצים על העסק שלך?</h1>
-        <p class="lead rise" style="--d: 1">בדיקה קצרה מראה איך האתר שלך נראה לגוגל, ומה עוזרי ה-AI עונים כששואלים על התחום שלך.</p>
-        <form class="hero-form rise" style="--d: 2" method="post" action="{{ url_for('scan') }}">
-          <label for="hero-site">כתובת האתר או דף העסק</label>
-          <div class="field-row">
-            <input id="hero-site" name="site" type="text" dir="ltr" required inputmode="url" autocapitalize="off"
-                   autocomplete="url" spellcheck="false" maxlength="2000" placeholder="www.example.co.il">
-            <button class="btn" type="submit" data-once data-pull>בדוק את העסק</button>
-          </div>
-        </form>
-        <p class="facts rise" style="--d: 3">עד 30 דפים. 18 בדיקות באתר. בלחיצה נסרוק את הכתובת ונשמור את התוצאה. <a href="{{ url_for('privacy') }}">מה אנחנו שומרים</a></p>
-        <div class="hero-act rise" style="--d: 3">
-          <a class="quiet" href="#how">איך זה עובד</a>
-        </div>
-      </div>
-
-      <figure class="demo rise" style="--d: 2" id="demo" aria-label="דוגמה: שאלה לעוזר AI, והדוח שמתקבל">
-        <div class="chat">
-          <div class="chat-top"><b>עוזר AI</b><span>דוגמה</span></div>
-          <p class="q">מה המסעדה הכי טובה באזור?</p>
-          <p class="a">
-            <span class="ln">ממליצים בעיקר על <mark>מתחרה א׳</mark> ועל <mark>מתחרה ב׳</mark>.</span>
-            <span class="ln">גם <mark>מתחרה ג׳</mark> מקבל ביקורות טובות.</span>
-          </p>
-          <p class="miss"><svg class="ico" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 3l8 8M11 3l-8 8"/></svg>העסק שלך לא הוזכר</p>
-        </div>
-        <div class="result">
-          <div class="result-score warn">
-            <div class="ring" role="img" aria-label="ציון לדוגמה: 62 מתוך 100">
-              <svg viewBox="0 0 120 120" aria-hidden="true">
-                <circle class="track" cx="60" cy="60" r="54"/>
-                <circle class="value" cx="60" cy="60" r="54" pathLength="100" style="stroke-dasharray: 62 100"/>
-              </svg>
-              <div class="num"><b id="demo-num">62</b><small>מתוך 100</small></div>
+    <div class="wrap">
+      <h1 class="rise" style="--d: 0">גוגל ו-AI ממליצים על העסק שלך?</h1>
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <p class="lead rise" style="--d: 2">בדיקה קצרה מראה איך האתר שלך נראה לגוגל, ומה עוזרי ה-AI עונים כששואלים על התחום שלך.</p>
+          <form class="hero-form rise" style="--d: 3" method="post" action="{{ url_for('scan') }}">
+            <label for="hero-site">כתובת האתר או דף העסק</label>
+            <div class="field-row">
+              <input id="hero-site" name="site" type="text" dir="ltr" required inputmode="url" autocapitalize="off"
+                     autocomplete="url" spellcheck="false" maxlength="2000" placeholder="www.example.co.il">
+              <button class="btn" type="submit" data-once data-pull>בדוק את העסק</button>
             </div>
-            <span class="verdict">אפשר לשפר</span>
-          </div>
-          <ol class="mini">
-            <li><span>1</span><b>להסיר חסימת AI</b></li>
-            <li><span>2</span><b>להוסיף כותרות לדפים</b></li>
-            <li><span>3</span><b>לתקן קישורים שבורים</b></li>
-          </ol>
+          </form>
+          <p class="facts rise" style="--d: 4">עד 30 דפים. 18 בדיקות באתר. בלחיצה נסרוק את הכתובת ונשמור את התוצאה. <a href="{{ url_for('privacy') }}">מה אנחנו שומרים</a></p>
         </div>
-        <button class="again" type="button" id="again" hidden>הפעל שוב</button>
-      </figure>
+        <figure class="specimen rise" style="--d: 3" aria-label="דוגמה: שאלה לעוזר AI והתשובה שלו">
+          <figcaption><span>שאלה לעוזר AI</span><span>דוגמה</span></figcaption>
+          <p class="ask">מה המסעדה הכי טובה באזור?</p>
+          <p class="answer">ממליצים בעיקר על <mark>מתחרה א׳</mark> ועל <mark>מתחרה ב׳</mark>. גם <mark>מתחרה ג׳</mark> מקבל ביקורות טובות.</p>
+          <p class="miss"><svg class="ico" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 3l8 8M11 3l-8 8"/></svg>העסק שלך לא הוזכר</p>
+        </figure>
+      </div>
     </div>
   </section>
 
@@ -106,6 +81,13 @@
       </div>
       <figure class="sheet" aria-label="דוגמה למשימות בדוח">
         <div class="sheet-top"><b>מה לתקן קודם</b><span>דוגמה</span></div>
+        <div class="sheet-score warn">
+          <div class="ring" role="img" aria-label="ציון לדוגמה: 62 מתוך 100">
+            <svg viewBox="0 0 120 120" aria-hidden="true"><circle class="track" cx="60" cy="60" r="54"/><circle class="value" cx="60" cy="60" r="54" pathLength="100" style="stroke-dasharray: 62 100"/></svg>
+            <div class="num"><b>62</b><small>מתוך 100</small></div>
+          </div>
+          <div><span class="verdict">אפשר לשפר</span><p>שלוש המשימות שיעלו את הציון הכי הרבה:</p></div>
+        </div>
         <div class="rows">
           {% set chevron = '<svg class="ico" viewBox="0 0 14 14" aria-hidden="true"><path d="M9 2.5L4.5 7 9 11.5"/></svg>' %}
           <details open>
