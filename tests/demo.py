@@ -52,15 +52,15 @@ SCRIPT = """
     show(['home', 'check', 'report'].indexOf(name) >= 0 ? name : 'home');
   }
   window.addEventListener('hashchange', route);
-  document.querySelector('form').addEventListener('submit', function (event) {
+  document.querySelectorAll('form').forEach(function (form) { form.addEventListener('submit', function (event) {
     event.preventDefault();
     var name = document.getElementById('name').value.trim() || 'העסק שלך';
-    var site = document.getElementById('site').value.trim();
+    var site = form.querySelector('[name="site"]').value.trim();
     document.querySelectorAll('[data-biz]').forEach(function (el) { el.textContent = name; });
     if (site) document.querySelectorAll('[data-site]').forEach(function (el) { el.textContent = site; });
     show('waiting');
     timer = setTimeout(function () { location.hash = 'report'; route(); }, 2200);
-  });
+  }); });
   route();
 })();
 </script>
@@ -128,6 +128,7 @@ def main(out_dir: str) -> None:
     page = page.replace('href="/check"', 'href="#check"').replace('href="/"', 'href="#home"')
     page = page.replace('href="/privacy"', 'href="#home"')
     page = page.replace('<link rel="stylesheet" href="/static/fonts/fonts.css">', FONTS)
+    page = re.sub(r'<link rel="preload"[^>]*>\n?', "", page)      # the demo has no /static folder
     (out / "site-demo.html").write_text(page, encoding="utf-8")
     server.shutdown()
     db.unlink(missing_ok=True)

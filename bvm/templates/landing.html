@@ -24,11 +24,18 @@
       <div class="hero-copy">
         <h1 class="rise" style="--d: 0">גוגל ו-AI ממליצים על העסק שלך?</h1>
         <p class="lead rise" style="--d: 1">בדיקה קצרה מראה איך האתר שלך נראה לגוגל, ומה עוזרי ה-AI עונים כששואלים על התחום שלך.</p>
-        <div class="hero-act rise" style="--d: 2">
-          <a class="btn" href="{{ url_for('check') }}">בדוק את העסק</a>
+        <form class="hero-form rise" style="--d: 2" method="post" action="{{ url_for('scan') }}">
+          <label for="hero-site">כתובת האתר או דף העסק</label>
+          <div class="field-row">
+            <input id="hero-site" name="site" type="text" dir="ltr" required inputmode="url" autocapitalize="off"
+                   autocomplete="url" spellcheck="false" maxlength="2000" placeholder="www.example.co.il">
+            <button class="btn" type="submit" data-once data-pull>בדוק את העסק</button>
+          </div>
+        </form>
+        <p class="facts rise" style="--d: 3">עד 30 דפים. 18 בדיקות באתר. בלחיצה נסרוק את הכתובת ונשמור את התוצאה. <a href="{{ url_for('privacy') }}">מה אנחנו שומרים</a></p>
+        <div class="hero-act rise" style="--d: 3">
           <a class="quiet" href="#how">איך זה עובד</a>
         </div>
-        <p class="facts rise" style="--d: 3">עד 30 דפים. 18 בדיקות באתר. ציון אחד ושלוש משימות.</p>
       </div>
 
       <figure class="demo rise" style="--d: 2" id="demo" aria-label="דוגמה: שאלה לעוזר AI, והדוח שמתקבל">
@@ -202,7 +209,7 @@
   <section class="close">
     <div class="wrap">
       <h2>כמה קל למצוא אותך?</h2>
-      <a class="btn" href="{{ url_for('check') }}">בדוק את העסק</a>
+      <a class="btn" href="{{ url_for('check') }}" data-pull>בדוק את העסק</a>
     </div>
   </section>
 </main>

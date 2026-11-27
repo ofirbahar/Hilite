@@ -1,4 +1,6 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23ffe24a'/%3E%3Cpath d='M21 12V52M21 37a11 11 0 0 1 22 0V52' fill='none' stroke='%2314201c' stroke-width='8'/%3E%3C/svg%3E">
+<link rel="preload" href="/static/fonts/frank-ruhl-libre-hebrew-500.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/static/fonts/ibm-plex-sans-hebrew-hebrew-400.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/static/fonts/fonts.css">
 <style>
 {# Printed paper and a highlighter. The page is cool paper with dark ink; a name the AI
@@ -18,11 +20,16 @@
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --shadow: 0 1px 2px rgba(20, 32, 28, 0.06), 0 18px 40px -22px rgba(20, 32, 28, 0.28);
+  {# the tooth of the paper: a faint grain, dark on paper and light on the night ground #}
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.11'/%3E%3C/svg%3E");
+  --grain-light: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.11'/%3E%3C/svg%3E");
 }
+{# going from page to page is a soft cross-fade where the browser can do it #}
+@view-transition { navigation: auto; }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html { -webkit-text-size-adjust: 100%; scrollbar-color: #b9c0b7 var(--paper); }
-body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font);
+body { margin: 0; background: var(--paper) var(--grain); color: var(--ink); font-family: var(--font);
   font-size: 17px; line-height: 1.55; -webkit-font-smoothing: antialiased; caret-color: var(--accent); }
 p, li { text-wrap: pretty; }
 ::selection { background: var(--mark); color: var(--ink); }
@@ -87,6 +94,13 @@ summary .count { font-size: 14px; color: var(--muted); white-space: nowrap; font
   background: var(--fill); border-radius: 999px; padding: 3px 10px; }
 summary .ico { color: #7a857f; transition: transform 200ms var(--ease-out); }
 details[open] > summary .ico { transform: rotate(-90deg); }
+{# a row opens and closes at its own height, where the browser can animate that #}
+@supports (interpolate-size: allow-keywords) {
+  :root { interpolate-size: allow-keywords; }
+  details::details-content { block-size: 0; overflow: clip;
+    transition: block-size 280ms var(--ease-out), content-visibility 280ms allow-discrete; }
+  details[open]::details-content { block-size: auto; }
+}
 summary:active { opacity: 0.6; }
 .inside { padding: 0 0 22px; display: flex; flex-direction: column; gap: 6px; color: var(--muted); font-size: 16px; }
 .inside .fix { color: var(--ink); }
@@ -153,7 +167,8 @@ input[dir="ltr"] { text-align: left; }
 input::placeholder, textarea::placeholder { color: #66716c; }
 .btn { font: inherit; font-weight: 600; color: var(--paper); background: var(--ink); border: 0; border-radius: 999px;
   min-height: 54px; padding: 0 28px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-  transition: background-color 160ms ease, transform 120ms var(--ease-out); }
+  translate: var(--pull-x, 0) var(--pull-y, 0);
+  transition: background-color 160ms ease, transform 120ms var(--ease-out), translate 320ms var(--ease-out); }
 .btn:active { transform: scale(0.97); }
 @media (hover: hover) and (pointer: fine) {
   .btn:hover { background: #000; }
@@ -200,6 +215,8 @@ input::placeholder, textarea::placeholder { color: #66716c; }
   .doing li { animation: none; }
   .doing li:first-child { opacity: 1; }
   .btn, summary .ico, .bar .go { transition: none; }
+  details::details-content { transition: none; }
+  @view-transition { navigation: none; }
   .btn:active, .bar .go:active { transform: none; }
 }
 @media (max-width: 520px) {

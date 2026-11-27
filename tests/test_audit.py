@@ -335,3 +335,13 @@ def test_a_first_visit_shows_no_empty_list_of_checks(tmp_path):
     html = public(tmp_path).get("/check").get_data(as_text=True)
     assert 'id="my-checks" hidden' in html
     assert "[hidden] { display: none !important; }" in html
+
+
+def test_a_check_can_be_started_from_the_first_screen(tmp_path):
+    """The home page's own field starts a real check, with the same notice as the form."""
+    client = public(tmp_path)
+    home = client.get("/").get_data(as_text=True)
+    hero = home.split('class="hero"', 1)[1].split("</section>", 1)[0]
+    assert 'method="post" action="/scan"' in hero and 'name="site"' in hero
+    assert '<label for="hero-site">' in hero and "נסרוק את הכתובת" in hero and 'href="/privacy"' in hero
+    assert start(client, site="example.com").startswith("/runs/1?key=")

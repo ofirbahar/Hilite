@@ -88,5 +88,19 @@
       window.addEventListener('resize', read);
     }
   }
+
+  {# The two main buttons lean a few pixels toward a mouse that comes near. #}
+  if (!still && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    Array.prototype.forEach.call(document.querySelectorAll('[data-pull]'), function (button) {
+      button.addEventListener('pointermove', function (e) {
+        var box = button.getBoundingClientRect();
+        button.style.setProperty('--pull-x', ((e.clientX - box.left - box.width / 2) * 0.16).toFixed(1) + 'px');
+        button.style.setProperty('--pull-y', ((e.clientY - box.top - box.height / 2) * 0.28).toFixed(1) + 'px');
+      });
+      button.addEventListener('pointerleave', function () {
+        button.style.removeProperty('--pull-x'); button.style.removeProperty('--pull-y');
+      });
+    });
+  }
 })();
 </script>
