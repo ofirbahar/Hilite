@@ -9,15 +9,15 @@ fonts = (root / "bvm/static/fonts").as_uri()
 logo = (root / "bvm/static/hilite-logo.svg").read_text(encoding="utf-8")
 logo = "\n".join(line for line in logo.splitlines() if "<rect" not in line).replace("#14201c", "#eef2ec")
 html = f"""<!DOCTYPE html><html lang="he" dir="rtl"><head><meta charset="utf-8"><style>
-@font-face {{ font-family: D; src: url({fonts}/frank-ruhl-libre-hebrew-var.woff2); unicode-range: U+0590-05FF, U+FB1D-FB4F; }}
-@font-face {{ font-family: D; src: url({fonts}/frank-ruhl-libre-latin-var.woff2); }}
-@font-face {{ font-family: S; src: url({fonts}/ibm-plex-sans-hebrew-hebrew-500.woff2); unicode-range: U+0590-05FF; }}
-@font-face {{ font-family: S; src: url({fonts}/ibm-plex-sans-hebrew-latin-500.woff2); }}
+@font-face {{ font-family: D; src: url({fonts}/heebo-hebrew-var.woff2); unicode-range: U+0590-05FF, U+FB1D-FB4F; }}
+@font-face {{ font-family: D; src: url({fonts}/heebo-latin-var.woff2); }}
+@font-face {{ font-family: S; src: url({fonts}/heebo-hebrew-var.woff2); unicode-range: U+0590-05FF; }}
+@font-face {{ font-family: S; src: url({fonts}/heebo-latin-var.woff2); }}
 html, body {{ margin: 0; }}
 body {{ width: 1200px; height: 630px; background: #0f1a17; color: #eef2ec; box-sizing: border-box;
   padding: 64px 80px; display: flex; flex-direction: column; justify-content: space-between; }}
 .logo svg {{ height: 56px; width: auto; display: block; }}
-h1 {{ font: 800 104px/1.04 D; margin: 0; max-width: 9.5em; }}
+h1 {{ font: 500 108px/1 D; letter-spacing: -0.05em; margin: 0; max-width: 9.5em; }}
 mark {{ background: none; color: #14201c; position: relative; isolation: isolate; white-space: nowrap; }}
 mark::before {{ content: ""; position: absolute; inset: 14% -10px 4%; background: #ffe24a; border-radius: 6px; z-index: -1; transform: rotate(-1deg); }}
 p {{ font: 500 32px/1.3 S; margin: 0; color: #9daaa4; }}

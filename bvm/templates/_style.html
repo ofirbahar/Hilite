@@ -1,6 +1,5 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23ffe24a'/%3E%3Cpath d='M21 12V52M21 37a11 11 0 0 1 22 0V52' fill='none' stroke='%2314201c' stroke-width='8'/%3E%3C/svg%3E">
-<link rel="preload" href="/static/fonts/frank-ruhl-libre-hebrew-var.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/static/fonts/ibm-plex-sans-hebrew-hebrew-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/static/fonts/heebo-hebrew-var.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/static/fonts/fonts.css">
 <style>
 {# Night, and a highlighter. Every page is the same dark ground with off-white ink; surfaces
@@ -15,8 +14,8 @@
   --good: #6fd698; --good-ring: #2fb866; --good-tint: #15301f;
   --warn: #f2b84a; --warn-ring: #f2a30f; --warn-tint: #33270f;
   --bad: #ff8a7e; --bad-ring: #ee4b3f; --bad-tint: #3a1a17;
-  --display: "Frank Ruhl Libre", "David Libre", Georgia, serif;
-  --font: "IBM Plex Sans Hebrew", "Heebo", "Segoe UI", Arial, sans-serif;
+  --display: "Heebo", "Segoe UI", Arial, sans-serif;
+  --font: "Heebo", "Segoe UI", Arial, sans-serif;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 24px 48px -28px rgba(0, 0, 0, 0.7);
@@ -63,7 +62,7 @@ svg.ico { width: 14px; height: 14px; flex: none; stroke: currentColor; fill: non
 {# score #}
 .score { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center;
   background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 32px 24px 28px; box-shadow: var(--shadow); }
-.score .who { font-family: var(--display); font-size: 28px; font-weight: 700; line-height: 1.15; overflow-wrap: anywhere; }
+.score .who { font-family: var(--display); font-size: 28px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; overflow-wrap: anywhere; }
 .score .site { font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
 .ring { position: relative; width: 208px; height: 208px; margin: 22px 0 12px; }
 .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
@@ -72,7 +71,7 @@ svg.ico { width: 14px; height: 14px; flex: none; stroke: currentColor; fill: non
 .ring .value { stroke-dasharray: 100; animation: draw 1100ms var(--ease-out) both; }
 @keyframes draw { from { stroke-dashoffset: 100; } }
 .ring .num { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.ring b { font-family: var(--display); font-size: 84px; line-height: 0.9; font-weight: 900; font-variant-numeric: lining-nums tabular-nums; }
+.ring b { font-family: var(--display); font-size: 84px; line-height: 0.9; font-weight: 600; letter-spacing: -0.04em; font-variant-numeric: lining-nums tabular-nums; }
 .ring small { font-size: 14px; color: var(--muted); margin-top: 8px; }
 .verdict { font-size: 15px; font-weight: 600; padding: 3px 10px; border-radius: 6px; }
 .good .value { stroke: var(--good-ring); } .good .verdict { color: var(--good); background: var(--good-tint); }
@@ -82,13 +81,13 @@ svg.ico { width: 14px; height: 14px; flex: none; stroke: currentColor; fill: non
 
 {# lists of rows that open #}
 .block { display: flex; flex-direction: column; gap: 6px; }
-.block > h2 { font-family: var(--display); font-size: 26px; font-weight: 700; line-height: 1.2; padding-bottom: 10px; }
+.block > h2 { font-family: var(--display); font-size: 26px; font-weight: 600; line-height: 1.2; letter-spacing: -0.02em; padding-bottom: 10px; }
 .rows > li, .rows > details { border-top: 1px solid var(--line); }
 .rows > :last-child { border-bottom: 1px solid var(--line); }
 summary { list-style: none; cursor: pointer; display: flex;
   gap: 14px; align-items: center; min-height: 64px; padding: 12px 0; }
 summary::-webkit-details-marker { display: none; }
-summary .n { font-family: var(--display); font-weight: 900; font-size: 26px; line-height: 1; width: 1.1ch;
+summary .n { font-family: var(--display); font-weight: 600; font-size: 26px; line-height: 1; width: 1.1ch;
   text-align: center; font-variant-numeric: lining-nums; }
 summary .t { font-weight: 600; flex: 1; min-width: 0; }
 summary .count { font-size: 14px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums;
@@ -155,7 +154,7 @@ summary:active { opacity: 0.6; }
 
 {# form #}
 .hello { display: flex; flex-direction: column; gap: 10px; }
-h1 { font-family: var(--display); font-size: 44px; line-height: 1.08; font-weight: 900; text-wrap: balance; }
+h1 { font-family: var(--display); font-size: 44px; line-height: 1.08; letter-spacing: -0.025em; font-weight: 600; text-wrap: balance; }
 .hello p { font-size: 19px; color: var(--muted); }
 form { display: flex; flex-direction: column; gap: 16px; }
 .field { display: flex; flex-direction: column; gap: 6px; }
