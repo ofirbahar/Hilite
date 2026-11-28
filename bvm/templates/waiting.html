@@ -9,11 +9,18 @@
 <main class="page waiting" id="main" data-waiting>
   <h1>בודקים את {% if who %}{{ who }}{% else %}<bdi>{{ address }}</bdi>{% endif %}</h1>
   <div class="scan" role="progressbar" aria-label="הבדיקה רצה"></div>
+  {% if steps %}
+  <ol class="live" id="steps" aria-label="שלבי הבדיקה">
+    {% for label, state in steps %}<li class="{{ state }}"{% if state == "now" %} aria-current="step"{% endif %}><i aria-hidden="true"></i>{{ label }}</li>
+    {% endfor %}
+  </ol>
+  {% else %}
   <ul class="doing{{ '' if asks_ai else ' two' }}" aria-hidden="true">
     <li style="--i: 0">קוראים את האתר</li>
     {% if asks_ai %}<li style="--i: 1">שואלים את ה-AI</li>{% endif %}
     <li style="--i: {{ 2 if asks_ai else 1 }}">מדרגים את המשימות</li>
   </ul>
+  {% endif %}
   <p>בדרך כלל דקה עד שתיים. הדוח ייפתח כאן לבד.</p>
 </main>
 <script{% if nonce %} nonce="{{ nonce }}"{% endif %}>
@@ -22,7 +29,10 @@
   if (!window.fetch || location.protocol === 'file:') return;
   var timer = setInterval(function () {
     fetch(location.href, { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (html) {
-      if (html.indexOf('data-waiting') < 0) { clearInterval(timer); location.reload(); }
+      if (html.indexOf('data-waiting') < 0) { clearInterval(timer); location.reload(); return; }
+      var now = document.getElementById('steps');
+      var fresh = new DOMParser().parseFromString(html, 'text/html').getElementById('steps');
+      if (now && fresh && now.innerHTML !== fresh.innerHTML) now.innerHTML = fresh.innerHTML;
     }).catch(function () {});
   }, 2000);
 })();

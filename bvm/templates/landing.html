@@ -32,6 +32,13 @@
       </form>
       <p class="facts rise" style="--d: 3">18 בדיקות באתר, בלי הרשמה. הדוח מוכן תוך דקה עד שתיים. <a href="{{ url_for('sample') }}">לראות דוח לדוגמה</a></p>
       <p class="facts consent-line rise" style="--d: 3">בלחיצה נסרוק את הכתובת ונשמור את התוצאה. <a href="{{ url_for('privacy') }}">מה אנחנו שומרים</a></p>
+      <div class="pick rise" style="--d: 4" role="group" aria-label="סוג העסק בדוגמה">
+        <span>דוגמה עבור</span>
+        <button type="button" data-demo="food" aria-pressed="true">מסעדה</button>
+        <button type="button" data-demo="clinic" aria-pressed="false">מרפאה</button>
+        <button type="button" data-demo="shop" aria-pressed="false">חנות</button>
+        <button type="button" data-demo="law" aria-pressed="false">עורך דין</button>
+      </div>
       <figure class="stage rise" style="--d: 4" aria-label="דוגמה: תשובה של עוזר AI והציון בדוח">
         <div class="stage-ai">
           <div class="stage-top"><b>שאלה לעוזר AI</b><span>דוגמה</span></div>
@@ -46,7 +53,7 @@
             <div class="num"><b>62</b><small>מתוך 100</small></div>
           </div>
           <span class="verdict">אפשר לשפר</span>
-          <p>הדוח מראה מה לתקן קודם כדי שהציון יעלה.</p>
+          <p>המשימה הראשונה בדוח: <span data-demo-task>להסיר חסימה של מנועי AI.</span></p>
         </div>
       </figure>
     </div>
@@ -55,6 +62,20 @@
   <section class="say" aria-label="למה זה חשוב">
     <div class="wrap">
       <p class="say-text">פעם חיפשו בגוגל וקיבלו עשרה קישורים. היום יותר ויותר אנשים שואלים AI ומקבלים תשובה אחת. <em>מי שלא מוזכר בה, לא נמצא שם.</em></p>
+      <figure class="ba" aria-label="דוגמה: אותה שאלה, תשובה בלי העסק שלך ותשובה איתו">
+        <div class="ba-view">
+          <div class="ba-pane"><span class="ba-tag">תשובה בלי העסק שלך</span>
+            <p class="ask">מה המסעדה הכי טובה באזור?</p>
+            <p class="answer">ממליצים בעיקר על <mark>מתחרה א׳</mark> ועל <mark>מתחרה ב׳</mark>. גם <mark>מתחרה ג׳</mark> מקבל ביקורות טובות.</p></div>
+          <div class="ba-pane ba-after"><span class="ba-tag">תשובה עם העסק שלך</span>
+            <p class="ask">מה המסעדה הכי טובה באזור?</p>
+            <p class="answer">ממליצים בעיקר על <mark class="you">העסק שלך</mark> ועל <mark>מתחרה א׳</mark>. גם <mark>מתחרה ב׳</mark> מקבל ביקורות טובות.</p></div>
+          <i class="ba-line" aria-hidden="true"></i>
+        </div>
+        <div class="ba-ctl"><label for="compare">גוררים כדי להשוות בין שתי התשובות</label>
+          <input id="compare" type="range" min="0" max="100" value="50"></div>
+        <figcaption class="small">דוגמה. הדוח מראה מה באתר מפריע ל-AI להזכיר אותך. הוא לא מבטיח שהתשובה תשתנה.</figcaption>
+      </figure>
     </div>
   </section>
 
@@ -167,10 +188,10 @@
         <p>הבדיקה קוראת את האתר כמו מבקר רגיל. היא לא משנה בו דבר.</p>
       </div>
       <ul class="plainlist">
-        <li><b>קוראים בלבד</b><p>שום דבר באתר לא נכתב, לא נמחק ולא משתנה.</p></li>
-        <li><b>מכבדים את הכללים של האתר</b><p>דף שביקשת מסורקים לא לקרוא, אנחנו לא קוראים.</p></li>
-        <li><b>מזדהים בשם</b><p>כל ביקור שלנו באתר מסומן בשם הבודק.</p></li>
-        <li><b>חשוב לדעת</b><p>תשובה שמתקבלת ישירות מעוזר AI לא תמיד זהה למה שרואים באפליקציה שלו.</p></li>
+        <li><b><svg class="pic" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>קוראים בלבד</b><p>שום דבר באתר לא נכתב, לא נמחק ולא משתנה.</p></li>
+        <li><b><svg class="pic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M9 13.5l2.5 2.5L16 11.5"/></svg>מכבדים את הכללים של האתר</b><p>דף שביקשת מסורקים לא לקרוא, אנחנו לא קוראים.</p></li>
+        <li><b><svg class="pic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M8 10.5h8M8 14h5"/></svg>מזדהים בשם</b><p>כל ביקור שלנו באתר מסומן בשם הבודק.</p></li>
+        <li><b><svg class="pic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.8v.4"/></svg>חשוב לדעת</b><p>תשובה שמתקבלת ישירות מעוזר AI לא תמיד זהה למה שרואים באפליקציה שלו.</p></li>
       </ul>
     </div>
   </section>

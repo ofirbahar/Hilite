@@ -87,13 +87,17 @@ def rescore(store: Store) -> int:
 
 
 def run(cfg: ClientConfig, store: Store, collectors=None, analyzers=None,
-        run_id: int | None = None) -> RunResult:
+        run_id: int | None = None, on_step=None) -> RunResult:
+    """on_step: called with a part's name as it starts, and with "analyze" before the
+    findings are worked out, so a waiting screen can say what is happening now."""
     collectors = default_collectors(cfg) if collectors is None else collectors
     analyzers = default_analyzers() if analyzers is None else analyzers
     if run_id is None:
         run_id = store.start_run(cfg.slug, cfg.to_dict())
 
     for collector in collectors:
+        if on_step:
+            on_step(getattr(collector, "name", ""))
         try:
             store.save_facts(run_id, cfg.slug, collector.collect(cfg))
         except Exception as exc:  # one part down must not stop the run
@@ -105,6 +109,8 @@ def run(cfg: ClientConfig, store: Store, collectors=None, analyzers=None,
             cfg.name_guessed = bool(cfg.name)
             store.update_config(run_id, cfg.to_dict())
 
+    if on_step:
+        on_step("analyze")
     facts = store.load_facts(run_id)
     findings = _analyze(cfg, store, run_id, facts, analyzers)
     store.save_findings(run_id, cfg.slug, findings)

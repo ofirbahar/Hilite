@@ -123,6 +123,21 @@
   </section>
   {% endif %}
 
+  {% if scanned and lost and score is not none %}
+  {# The same sum the score was made with (see scoring.py), run again in the browser without
+     the tasks the reader ticks. Shown only when a script is there to do the sum. #}
+  <section class="block whatif" id="whatif" hidden data-score="{{ score }}" data-cap="{{ cap }}" data-ai="{{ ai_part if ai_part is not none else '' }}">
+    <h2>מה יקרה לציון אחרי תיקון</h2>
+    <p class="lede">מסמנים מה תוקן, והציון מחושב מחדש לפי אותה נוסחה של הדוח.</p>
+    <ul class="rows ticks">
+      {% for key, title, points in lost %}<li><input type="checkbox" id="fix-{{ loop.index }}" data-points="{{ points }}"{% if key in capped_keys %} data-capped{% endif %}><label for="fix-{{ loop.index }}">{{ title }}</label></li>
+      {% endfor %}
+    </ul>
+    <p class="whatif-out" role="status"><span data-text>הציון היום</span><b data-new>{{ score }}</b></p>
+    <p class="note">זה חישוב, לא מדידה. בדיקה חוזרת אחרי התיקון תראה את הציון בפועל.</p>
+  </section>
+  {% endif %}
+
   {% if score is not none %}
   <details class="how">
     <summary>איך חושב הציון</summary>
@@ -168,6 +183,58 @@
   </section>
   {% endif %}
 </main>
+<script{% if nonce %} nonce="{{ nonce }}"{% endif %}>
+(function () {
+  var still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  {# The score counts up once while its ring draws. #}
+  var number = document.querySelector('.score .ring b');
+  var target = number ? parseInt(number.textContent, 10) : NaN;
+  if (!still && target > 0 && window.requestAnimationFrame) {
+    var began = null;
+    number.textContent = '0';
+    requestAnimationFrame(function tick(now) {
+      if (began === null) began = now;
+      var t = Math.min(1, (now - began) / 900);
+      number.textContent = String(Math.round(target * (1 - Math.pow(1 - t, 3))));
+      if (t < 1) requestAnimationFrame(tick);
+    });
+    setTimeout(function () { number.textContent = String(target); }, 1500);
+  }
+
+  {# What the score becomes without the ticked tasks: scoring.py's sum, step for step. #}
+  var box = document.getElementById('whatif');
+  if (!box) return;
+  var ticks = Array.prototype.slice.call(box.querySelectorAll('input'));
+  var cap = parseInt(box.getAttribute('data-cap'), 10);
+  var ai = box.getAttribute('data-ai');
+  var today = parseInt(box.getAttribute('data-score'), 10);
+  function half(sum) { {# Python rounds a half to the even number #}
+    var low = Math.floor(sum / 2);
+    return sum % 2 === 0 ? low : (low % 2 === 0 ? low : low + 1);
+  }
+  function score() {
+    var lost = 0, capped = false;
+    ticks.forEach(function (tick) {
+      if (tick.checked) return;
+      lost += parseInt(tick.getAttribute('data-points'), 10);
+      if (tick.hasAttribute('data-capped')) capped = true;
+    });
+    var site = Math.max(0, 100 - lost);
+    if (capped) site = Math.min(site, cap);
+    return ai === '' ? site : half(site + parseInt(ai, 10));
+  }
+  if (score() !== today) return;            {# the sum must reproduce the report's own score #}
+  var out = box.querySelector('[data-new]'), text = box.querySelector('[data-text]');
+  function show() {
+    var value = score(), any = ticks.some(function (tick) { return tick.checked; });
+    out.textContent = String(value);
+    text.textContent = any ? 'הציון אחרי התיקונים שסימנת (היום ' + today + ')' : 'הציון היום';
+    box.classList.toggle('moved', value > today);
+  }
+  ticks.forEach(function (tick) { tick.checked = false; tick.addEventListener('change', show); });
+  box.hidden = false;
+})();
+</script>
 {% include "_once.html" %}
 {% if remember %}
 <script{% if nonce %} nonce="{{ nonce }}"{% endif %}>

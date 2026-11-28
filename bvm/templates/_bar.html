@@ -1,6 +1,9 @@
 <header class="bar">
   <div>
     <a class="brand" href="{{ home_url or '#' }}" dir="ltr">{% include "_logo.html" %}</a>
-    {% if check_url %}<a class="go" href="{{ check_url }}">{{ check_label or 'בדיקה חדשה' }}</a>{% endif %}
+    <span class="bar-end">
+      <button class="theme" type="button" data-theme-toggle aria-pressed="false" aria-label="מצב כהה"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 3a7 7 0 0 1 0 14z" fill="currentColor"/></svg></button>
+      {% if check_url %}<a class="go" href="{{ check_url }}">{{ check_label or 'בדיקה חדשה' }}</a>{% endif %}
+    </span>
   </div>
 </header>

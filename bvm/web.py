@@ -49,6 +49,10 @@ MAX_FORM_BYTES = 64_000      # the form is a few short fields; nothing larger is
 POLICY = ("default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; "
           "script-src 'self' 'nonce-{nonce}'; object-src 'none'; frame-ancestors 'none'; "
           "base-uri 'self'; form-action 'self'")
+# What the waiting screen calls each part of a scan, by the part's own name.
+STEP_LABELS = {"site-crawler": "קוראים את דפי האתר", "google-profile": "מחפשים את העסק בגוגל",
+               "page-speed": "מודדים מהירות בטלפון", "ai-visibility": "שואלים את עוזרי ה-AI",
+               "analyze": "מדרגים את המשימות"}
 # The pages use none of these, so no script on them may ask for them.
 NO_DEVICE_ACCESS = "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
 # Questions people ask before they try it. Every answer repeats what the site already
@@ -136,6 +140,17 @@ def create_app(db_path: str = "bvm.sqlite3", allow_private: bool = False,
     contact = (os.environ.get("HILITE_CONTACT", "") if contact is None else contact).strip()
     app.config["TEMPLATES_AUTO_RELOAD"] = True  # a template edit shows on the next request
     active: set[int] = set()  # scans this process is working on right now
+    # What each of those scans is doing at this moment, for its waiting screen.
+    progress: dict[int, dict] = {}
+
+    def steps_of(run_id: int) -> list[tuple[str, str]]:
+        """(label, "done" | "now" | "next") for each step of a scan this process runs."""
+        state = progress.get(run_id)
+        if not state:
+            return []
+        return [(STEP_LABELS.get(name, "אוספים נתונים"),
+                 "done" if i < state["at"] else "now" if i == state["at"] else "next")
+                for i, name in enumerate(state["steps"])]
 
     def store() -> Store:
         return Store(db_path)
@@ -160,13 +175,21 @@ def create_app(db_path: str = "bvm.sqlite3", allow_private: bool = False,
             # Outside development, the crawler re-checks every address and every redirect.
             parts = (collectors(cfg) if collectors
                      else default_collectors(cfg, public_only=not allow_private))
-            run_pipeline(cfg, notebook, run_id=run_id, collectors=parts)
+            names = [getattr(part, "name", "") for part in parts] + ["analyze"]
+            state = progress[run_id] = {"steps": names, "at": 0}
+
+            def on_step(name: str) -> None:
+                if name in names:
+                    state["at"] = names.index(name)
+
+            run_pipeline(cfg, notebook, run_id=run_id, collectors=parts, on_step=on_step)
         except Exception as exc:  # never leave a scan stuck on "running"
             notebook.save_failure(run_id, "pipeline", f"{type(exc).__name__}: {exc}")
             notebook.finish_run(run_id, status="failed")
         finally:
             notebook.close()
             active.discard(run_id)
+            progress.pop(run_id, None)
 
     def recent_runs() -> list[dict]:
         notebook = store()
@@ -427,7 +450,7 @@ def create_app(db_path: str = "bvm.sqlite3", allow_private: bool = False,
                 notebook.finish_run(run_id, status="failed")
                 run["status"] = "failed"
             if run["status"] == "running":
-                return render_template("waiting.html", run=run)
+                return render_template("waiting.html", run=run, steps=steps_of(run_id))
             cfg = ClientConfig.from_dict(run["config"])
             result = RunResult(run_id, notebook.load_facts(run_id),
                                notebook.load_findings(run_id), notebook.load_failures(run_id))

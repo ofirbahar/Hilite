@@ -84,7 +84,7 @@ def test_the_site_makes_no_claim_it_cannot_back():
 def test_there_are_no_reviews_prices_or_pressure_on_the_site():
     copy = "".join(p.read_text(encoding="utf-8") for p in TEMPLATES.glob("*.html"))
     for pattern in ("לקוחות מרוצים", "ממליצים עלינו", "כוכבים", "₪", "מבצע", "נשארו רק", "מהרו",
-                    "checked", "countdown"):
+                    " checked", "countdown"):          # no box arrives already ticked
         assert pattern not in copy, pattern
 
 

@@ -7,6 +7,18 @@
     if (button.disabled) { event.preventDefault(); return; }
     setTimeout(function () { button.disabled = true; button.setAttribute('aria-busy', 'true'); }, 0);
   });
+  {# The light/dark switch. The choice is kept on this device only (see _style.html). #}
+  var toggle = document.querySelector('[data-theme-toggle]'), page = document.documentElement;
+  if (toggle) {
+    var dark = page.getAttribute('data-theme') === 'dark';
+    toggle.setAttribute('aria-pressed', String(dark));
+    toggle.addEventListener('click', function () {
+      dark = !dark;
+      if (dark) page.setAttribute('data-theme', 'dark'); else page.removeAttribute('data-theme');
+      toggle.setAttribute('aria-pressed', String(dark));
+      try { localStorage.setItem('hilite-theme', dark ? 'dark' : 'light'); } catch (error) {}
+    });
+  }
   {# Coming back with the Back button must not leave the button locked. #}
   window.addEventListener('pageshow', function () {
     document.querySelectorAll('[data-once]').forEach(function (button) {

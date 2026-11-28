@@ -2,6 +2,7 @@
 sideways scrolling, script errors, text that is hard to read against what is behind it,
 things too small to tap, and text that runs out of its box."""
 import json
+import os
 import pathlib
 import sys
 
@@ -14,7 +15,7 @@ CHECK = r"""
   const out = {overflow: document.documentElement.scrollWidth > innerWidth + 1, lowContrast: [], smallTaps: [], clipped: [], offscreen: []};
   const lum = (r, g, b) => { const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); };
   const parse = c => { const m = c.match(/rgba?\(([^)]+)\)/); if (!m) return null; const p = m[1].split(/[ ,\/]+/).map(Number); return {r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1}; };
-  const bgOf = el => { for (let e = el; e; e = e.parentElement) { const s = getComputedStyle(e); const c = parse(s.backgroundColor); if (c && c.a > 0.5) return c; if (s.backgroundImage.includes('gradient') && e.tagName === 'MARK') return {r: 255, g: 226, b: 74, a: 1}; } return {r: 15, g: 26, b: 23, a: 1}; };
+  const bgOf = el => { for (let e = el; e; e = e.parentElement) { const s = getComputedStyle(e); const c = parse(s.backgroundColor); if (c && c.a > 0.5) return c; } return {r: 255, g: 255, b: 255, a: 1}; };
   const seen = new Set();
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
   while (walker.nextNode()) {
@@ -27,8 +28,7 @@ CHECK = r"""
     let op = 1; for (let e = el; e; e = e.parentElement) op *= parseFloat(getComputedStyle(e).opacity);
     if (op < 0.4) continue;                                        // mid-animation or deliberately dimmed
     const fg = parse(s.color), bg = bgOf(el); if (!fg) continue;
-    const marked = el.classList.contains('w') && el.classList.contains('on') && el.closest('em');
-    const l1 = lum(fg.r, fg.g, fg.b), l2 = marked ? lum(255, 226, 74) : lum(bg.r, bg.g, bg.b);
+    const l1 = lum(fg.r, fg.g, fg.b), l2 = lum(bg.r, bg.g, bg.b);
     const ratio = (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
     if (ratio < 4.4) out.lowContrast.push({text: node.textContent.trim().slice(0, 30), ratio: +ratio.toFixed(2), cls: el.className || el.tagName});
     if (box.right > innerWidth + 2 || box.left < -2) out.offscreen.push({text: node.textContent.trim().slice(0, 30), left: Math.round(box.left), right: Math.round(box.right)});
@@ -38,6 +38,7 @@ CHECK = r"""
     const box = el.getBoundingClientRect(); const s = getComputedStyle(el);
     if (box.width === 0 || s.display === 'none' || el.closest('[hidden]') || el.closest('details:not([open]) > :not(summary)')) return;
     if (s.display === 'inline' && el.closest('p, li, span')) return;                    // a link in running text
+    if (el.type === 'checkbox' && el.id && document.querySelector('label[for="' + el.id + '"]')) return;   // its label is the target
     if (box.height < 40) out.smallTaps.push({text: (el.textContent || el.placeholder || '').trim().slice(0, 24), h: Math.round(box.height), cls: el.className || el.tagName});
   });
   return out;
@@ -56,6 +57,8 @@ def main():
         browser = p.chromium.launch()
         for width in WIDTHS:
             page = browser.new_page(viewport={"width": width, "height": 900}, reduced_motion="reduce")
+            if os.environ.get("SWEEP_THEME") == "dark":          # the page as the dark switch leaves it
+                page.add_init_script("try { localStorage.setItem('hilite-theme', 'dark'); } catch (e) {}")
             errors = []
             page.on("console", lambda m: errors.append(m.text) if m.type == "error" and "404" not in m.text else None)
             page.on("pageerror", lambda e: errors.append(str(e)))
