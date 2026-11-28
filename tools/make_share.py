@@ -9,10 +9,10 @@ fonts = (root / "bvm/static/fonts").as_uri()
 logo = (root / "bvm/static/hilite-logo.svg").read_text(encoding="utf-8")
 logo = "\n".join(line for line in logo.splitlines() if "<rect" not in line).replace("#14201c", "#0b0c0f")
 html = f"""<!DOCTYPE html><html lang="he" dir="rtl"><head><meta charset="utf-8"><style>
-@font-face {{ font-family: D; src: url({fonts}/plex-hebrew-600.woff2); unicode-range: U+0590-05FF, U+FB1D-FB4F; }}
-@font-face {{ font-family: D; src: url({fonts}/plex-latin-600.woff2); }}
-@font-face {{ font-family: S; src: url({fonts}/plex-hebrew-400.woff2); unicode-range: U+0590-05FF; }}
-@font-face {{ font-family: S; src: url({fonts}/plex-latin-400.woff2); }}
+@font-face {{ font-family: D; src: url({fonts}/heebo-hebrew-var.woff2); unicode-range: U+0590-05FF, U+FB1D-FB4F; }}
+@font-face {{ font-family: D; src: url({fonts}/heebo-latin-var.woff2); }}
+@font-face {{ font-family: S; src: url({fonts}/heebo-hebrew-var.woff2); unicode-range: U+0590-05FF; }}
+@font-face {{ font-family: S; src: url({fonts}/heebo-latin-var.woff2); }}
 html, body {{ margin: 0; }}
 body {{ width: 1200px; height: 630px; background: #ffffff; color: #0b0c0f; box-sizing: border-box;
   padding: 64px 80px; display: flex; flex-direction: column; justify-content: space-between; }}
