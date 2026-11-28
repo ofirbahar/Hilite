@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#ffffff">
 {% set shown_name = client.name or (client.site|replace('https://', '')|replace('http://', '')) %}
-<title>הדוח של {{ shown_name }}</title>
+<title>{{ "דוח לדוגמה | Hilite" if sample else "הדוח של " ~ shown_name }}</title>
 {% include "_style.html" %}
 </head>
 <body>
@@ -44,6 +44,7 @@
   <section class="score {{ status }}">
     <span class="who">{{ shown_name }}</span>
     <span class="site"><bdi>{{ client.site }}{{ client.start_path if client.start_path != '/' else '' }}</bdi></span>
+    {% if sample %}<span class="site guessed">דוח לדוגמה. העסק, המתחרים והתשובות בדויים; הדוח עצמו נוצר בבדיקה אמיתית של אתר ניסיון.</span>{% endif %}
     {% if client.name_guessed %}<span class="site guessed">השם זוהה מהדף. לא מדויק? אפשר לכתוב אותו בבדיקה חדשה, תחת "עוד אפשרויות".</span>{% endif %}
     <div class="ring" role="img" aria-label="ציון {{ score if score is not none else 'לא זמין' }} מתוך 100">
       <svg viewBox="0 0 120 120" aria-hidden="true">

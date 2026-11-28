@@ -20,7 +20,7 @@ def client(tmp_path):
     return client
 
 
-PAGES = ["/", "/check", "/privacy", "/runs/1"]
+PAGES = ["/", "/check", "/privacy", "/runs/1", "/sample"]
 
 
 # --- third parties and data -------------------------------------------------------

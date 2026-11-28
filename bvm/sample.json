@@ -1,0 +1,526 @@
+{
+ "config": {
+  "name": "Acme",
+  "slug": "acme",
+  "site": "https://www.acme-demo.co.il",
+  "aliases": [],
+  "competitors": [
+   "Globex",
+   "Initech"
+  ],
+  "target_country": "US",
+  "city": "",
+  "buyer_questions": [
+   "מה התוכנה הכי טובה לניהול מלאי לעסק קטן?",
+   "איזו תוכנת מלאי מתחברת לחנות אונליין?",
+   "תוכנת מלאי זולה למתחילים",
+   "מה החלופות ל-Globex?"
+  ],
+  "approved_description": "",
+  "start_path": "/",
+  "platform": "",
+  "max_pages": 50,
+  "delay_seconds": 0,
+  "slow_page_seconds": 2.0,
+  "name_guessed": false
+ },
+ "facts": [
+  {
+   "collector": "site-crawler",
+   "kind": "site",
+   "subject": "https://www.acme-demo.co.il",
+   "data": {
+    "has_robots_txt": true,
+    "has_sitemap": false,
+    "ai_crawlers_blocked": [
+     "OAI-SearchBot"
+    ]
+   }
+  },
+  {
+   "collector": "site-crawler",
+   "kind": "page",
+   "subject": "https://www.acme-demo.co.il/",
+   "data": {
+    "linked_from": "",
+    "seconds": 0.001,
+    "googlebot_allowed": true,
+    "final_url": "https://www.acme-demo.co.il/",
+    "status": 200,
+    "x_robots_tag": "",
+    "is_html": true,
+    "viewport": true,
+    "business": {},
+    "words_found": [],
+    "has_phone": false,
+    "has_hours": false,
+    "title": "Acme Home",
+    "description": "Acme makes widgets.",
+    "h1": [
+     "Acme"
+    ],
+    "site_name": "",
+    "og_title": "",
+    "data_name": "",
+    "canonical": "",
+    "meta_robots": "",
+    "lang": "en",
+    "has_structured_data": false,
+    "scripts": 0,
+    "images": 1,
+    "images_missing_alt": 0,
+    "word_count": 9,
+    "links": [
+     "https://www.acme-demo.co.il/about",
+     "https://www.acme-demo.co.il/missing",
+     "https://www.acme-demo.co.il/pricing",
+     "https://www.acme-demo.co.il/private/notes",
+     "https://www.acme-demo.co.il/slow",
+     "https://other.example/"
+    ]
+   }
+  },
+  {
+   "collector": "site-crawler",
+   "kind": "page",
+   "subject": "https://www.acme-demo.co.il/about",
+   "data": {
+    "linked_from": "https://www.acme-demo.co.il/",
+    "seconds": 0.001,
+    "googlebot_allowed": true,
+    "final_url": "https://www.acme-demo.co.il/about",
+    "status": 200,
+    "x_robots_tag": "",
+    "is_html": true,
+    "viewport": true,
+    "business": {},
+    "words_found": [],
+    "has_phone": false,
+    "has_hours": false,
+    "title": "",
+    "description": "",
+    "h1": [
+     "About",
+     "Team"
+    ],
+    "site_name": "",
+    "og_title": "",
+    "data_name": "",
+    "canonical": "",
+    "meta_robots": "",
+    "lang": "",
+    "has_structured_data": false,
+    "scripts": 0,
+    "images": 1,
+    "images_missing_alt": 1,
+    "word_count": 3,
+    "links": [
+     "https://www.acme-demo.co.il/"
+    ]
+   }
+  },
+  {
+   "collector": "site-crawler",
+   "kind": "page",
+   "subject": "https://www.acme-demo.co.il/missing",
+   "data": {
+    "linked_from": "https://www.acme-demo.co.il/",
+    "seconds": 0.001,
+    "googlebot_allowed": true,
+    "final_url": "https://www.acme-demo.co.il/missing",
+    "status": 404,
+    "x_robots_tag": "",
+    "is_html": true
+   }
+  },
+  {
+   "collector": "site-crawler",
+   "kind": "page",
+   "subject": "https://www.acme-demo.co.il/pricing",
+   "data": {
+    "linked_from": "https://www.acme-demo.co.il/",
+    "seconds": 0.001,
+    "googlebot_allowed": true,
+    "final_url": "https://www.acme-demo.co.il/pricing",
+    "status": 200,
+    "x_robots_tag": "",
+    "is_html": true,
+    "viewport": true,
+    "business": {},
+    "words_found": [],
+    "has_phone": false,
+    "has_hours": false,
+    "title": "Acme Home",
+    "description": "Prices.",
+    "h1": [
+     "Pricing"
+    ],
+    "site_name": "",
+    "og_title": "",
+    "data_name": "",
+    "canonical": "",
+    "meta_robots": "noindex, follow",
+    "lang": "",
+    "has_structured_data": false,
+    "scripts": 0,
+    "images": 0,
+    "images_missing_alt": 0,
+    "word_count": 1,
+    "links": []
+   }
+  },
+  {
+   "collector": "site-crawler",
+   "kind": "page",
+   "subject": "https://www.acme-demo.co.il/private/notes",
+   "data": {
+    "skipped": "robots.txt",
+    "linked_from": "https://www.acme-demo.co.il/",
+    "googlebot_allowed": false
+   }
+  },
+  {
+   "collector": "site-crawler",
+   "kind": "page",
+   "subject": "https://www.acme-demo.co.il/slow",
+   "data": {
+    "linked_from": "https://www.acme-demo.co.il/",
+    "seconds": 0.401,
+    "googlebot_allowed": true,
+    "final_url": "https://www.acme-demo.co.il/slow",
+    "status": 200,
+    "x_robots_tag": "",
+    "is_html": true,
+    "viewport": true,
+    "business": {},
+    "words_found": [],
+    "has_phone": false,
+    "has_hours": false,
+    "title": "Slow page",
+    "description": "Slow.",
+    "h1": [
+     "Slow"
+    ],
+    "site_name": "",
+    "og_title": "",
+    "data_name": "",
+    "canonical": "",
+    "meta_robots": "",
+    "lang": "",
+    "has_structured_data": false,
+    "scripts": 0,
+    "images": 0,
+    "images_missing_alt": 0,
+    "word_count": 1,
+    "links": []
+   }
+  },
+  {
+   "collector": "ai-visibility",
+   "kind": "ai_answer",
+   "subject": "מה התוכנה הכי טובה לניהול מלאי לעסק קטן?",
+   "data": {
+    "assistant": "עוזר AI",
+    "answer": "ההמלצות המובילות: Globex, Initech ואחריהן Acme.",
+    "mentioned": true,
+    "position": 3,
+    "competitors_mentioned": [
+     "Globex",
+     "Initech"
+    ],
+    "cited_domains": [
+     "blog.test",
+     "reviews.test"
+    ]
+   }
+  },
+  {
+   "collector": "ai-visibility",
+   "kind": "ai_answer",
+   "subject": "איזו תוכנת מלאי מתחברת לחנות אונליין?",
+   "data": {
+    "assistant": "עוזר AI",
+    "answer": "Globex ו-Initech מתחברות שתיהן.",
+    "mentioned": false,
+    "position": null,
+    "competitors_mentioned": [
+     "Globex",
+     "Initech"
+    ],
+    "cited_domains": [
+     "reviews.test"
+    ]
+   }
+  },
+  {
+   "collector": "ai-visibility",
+   "kind": "ai_answer",
+   "subject": "תוכנת מלאי זולה למתחילים",
+   "data": {
+    "assistant": "עוזר AI",
+    "answer": "Globex מציעה תוכנית חינמית.",
+    "mentioned": false,
+    "position": null,
+    "competitors_mentioned": [
+     "Globex"
+    ],
+    "cited_domains": [
+     "compare.test"
+    ]
+   }
+  },
+  {
+   "collector": "ai-visibility",
+   "kind": "ai_answer",
+   "subject": "מה החלופות ל-Globex?",
+   "data": {
+    "assistant": "עוזר AI",
+    "answer": "כדאי לבדוק את Initech.",
+    "mentioned": false,
+    "position": null,
+    "competitors_mentioned": [
+     "Initech"
+    ],
+    "cited_domains": [
+     "reviews.test"
+    ]
+   }
+  }
+ ],
+ "findings": [
+  {
+   "analyzer": "technical-seo",
+   "key": "ai-crawlers-blocked",
+   "title": "להסיר חסימת AI",
+   "detail": "האתר חוסם את מנועי ה-AI.",
+   "how_to_fix": "להסיר את החסימה בהגדרות האתר.",
+   "evidence": [
+    "OAI-SearchBot"
+   ],
+   "impact": 5,
+   "effort": 1,
+   "owner": "בונה האתר",
+   "tech": "חסימת סורקי AI בקובץ robots.txt",
+   "affected": 0,
+   "of": 0
+  },
+  {
+   "analyzer": "technical-seo",
+   "key": "missing-title",
+   "title": "להוסיף כותרות לדפים",
+   "detail": "דף אחד מופיע בגוגל בלי כותרת.",
+   "how_to_fix": "לכתוב לכל דף כותרת קצרה.",
+   "evidence": [
+    "https://www.acme-demo.co.il/about"
+   ],
+   "impact": 4,
+   "effort": 1,
+   "owner": "כותב התוכן",
+   "tech": "תג title חסר",
+   "affected": 1,
+   "of": 3
+  },
+  {
+   "analyzer": "technical-seo",
+   "key": "broken-links",
+   "title": "לתקן קישורים שבורים",
+   "detail": "קישור אחד מוביל לדף שגיאה.",
+   "how_to_fix": "לעדכן את הקישור לדף שקיים.",
+   "evidence": [
+    "https://www.acme-demo.co.il/missing (הקישור נמצא בדף https://www.acme-demo.co.il/)"
+   ],
+   "impact": 4,
+   "effort": 2,
+   "owner": "כותב התוכן",
+   "tech": "קישורים שבורים (שגיאת 404)",
+   "affected": 1,
+   "of": 6
+  },
+  {
+   "analyzer": "ai-gap",
+   "key": "ai-competitor-gap",
+   "title": "לענות על שאלות של קונים",
+   "detail": "ב-3 תשובות ה-AI ממליץ רק על מתחרים.",
+   "how_to_fix": "לכתוב דף באתר שעונה על כל שאלה.",
+   "evidence": [
+    "איזו תוכנת מלאי מתחברת לחנות אונליין? (עוזר AI): Globex, Initech",
+    "תוכנת מלאי זולה למתחילים (עוזר AI): Globex",
+    "מה החלופות ל-Globex? (עוזר AI): Initech"
+   ],
+   "impact": 4,
+   "effort": 3,
+   "owner": "כותב התוכן",
+   "tech": "פער מול מתחרים בתשובות AI",
+   "affected": 0,
+   "of": 0
+  },
+  {
+   "analyzer": "technical-seo",
+   "key": "structured-data",
+   "title": "להציג את העסק למנועים",
+   "detail": "גוגל ו-AI לא מקבלים מהאתר את פרטי העסק.",
+   "how_to_fix": "להוסיף לאתר את פרטי העסק בפורמט שמנועים קוראים.",
+   "evidence": [
+    "https://www.acme-demo.co.il/",
+    "https://www.acme-demo.co.il/about",
+    "https://www.acme-demo.co.il/slow"
+   ],
+   "impact": 4,
+   "effort": 3,
+   "owner": "בונה האתר",
+   "tech": "נתונים מובנים (schema, JSON-LD)",
+   "affected": 0,
+   "of": 0
+  },
+  {
+   "analyzer": "technical-seo",
+   "key": "missing-description",
+   "title": "להוסיף תיאורים לדפים",
+   "detail": "דף אחד מופיע בגוגל בלי תיאור.",
+   "how_to_fix": "לכתוב לכל דף משפט שמסביר מה יש בו.",
+   "evidence": [
+    "https://www.acme-demo.co.il/about"
+   ],
+   "impact": 3,
+   "effort": 1,
+   "owner": "כותב התוכן",
+   "tech": "תג meta description חסר",
+   "affected": 1,
+   "of": 3
+  },
+  {
+   "analyzer": "ai-gap",
+   "key": "ai-share",
+   "title": "להופיע בתשובות של AI",
+   "detail": "ה-AI מזכיר אותך ב-1 מתוך 4 תשובות.",
+   "how_to_fix": "לפרסם באתר תשובות לשאלות שקונים שואלים.",
+   "evidence": [
+    "איזו תוכנת מלאי מתחברת לחנות אונליין? (עוזר AI)",
+    "תוכנת מלאי זולה למתחילים (עוזר AI)",
+    "מה החלופות ל-Globex? (עוזר AI)"
+   ],
+   "impact": 4,
+   "effort": 4,
+   "owner": "כותב התוכן",
+   "tech": "נתח אזכורים בתשובות AI",
+   "affected": 0,
+   "of": 0
+  },
+  {
+   "analyzer": "buyer-questions",
+   "key": "check-questions-unanswered",
+   "title": "לוודא שהאתר עונה לקונים",
+   "detail": "לא מצאנו באתר תשובה ל-4 מהשאלות שהזנת.",
+   "how_to_fix": "לכתוב לכל שאלה פסקה שעונה עליה, במילים של הלקוח.",
+   "evidence": [
+    "מה התוכנה הכי טובה לניהול מלאי לעסק קטן?",
+    "איזו תוכנת מלאי מתחברת לחנות אונליין?",
+    "תוכנת מלאי זולה למתחילים",
+    "מה החלופות ל-Globex?"
+   ],
+   "impact": 3,
+   "effort": 3,
+   "owner": "כותב התוכן",
+   "tech": "מילות השאלה לא נמצאו ב-4 הדפים שנקראו (לא נכלל בציון)",
+   "affected": 0,
+   "of": 0
+  },
+  {
+   "analyzer": "technical-seo",
+   "key": "check-noindex",
+   "title": "לבדוק דפים מוסתרים",
+   "detail": "דף אחד מוסתר מגוגל.",
+   "how_to_fix": "לבטל את ההסתרה, אם היא לא מכוונת.",
+   "evidence": [
+    "https://www.acme-demo.co.il/pricing"
+   ],
+   "impact": 2,
+   "effort": 1,
+   "owner": "בונה האתר",
+   "tech": "תג noindex (לא נכלל בציון)",
+   "affected": 0,
+   "of": 0
+  },
+  {
+   "analyzer": "technical-seo",
+   "key": "check-robots-blocked",
+   "title": "לבדוק דפים חסומים",
+   "detail": "דף אחד חסום לגוגל.",
+   "how_to_fix": "להסיר את החסימה, אם היא לא מכוונת.",
+   "evidence": [
+    "https://www.acme-demo.co.il/private/notes"
+   ],
+   "impact": 2,
+   "effort": 1,
+   "owner": "בונה האתר",
+   "tech": "חסימה לגוגל בקובץ robots.txt (לא נכלל בציון)",
+   "affected": 0,
+   "of": 0
+  },
+  {
+   "analyzer": "technical-seo",
+   "key": "check-sitemap",
+   "title": "לוודא שגוגל קיבל רשימת דפים",
+   "detail": "לא מצאנו רשימת דפים בכתובות המקובלות באתר.",
+   "how_to_fix": "אם הוגשה ב-Search Console, אין מה לתקן. אחרת להגיש.",
+   "evidence": [],
+   "impact": 2,
+   "effort": 1,
+   "owner": "בונה האתר",
+   "tech": "sitemap.xml לא נמצא (לא נכלל בציון)",
+   "affected": 0,
+   "of": 0
+  },
+  {
+   "analyzer": "ai-gap",
+   "key": "ai-citation-sources",
+   "title": "להופיע באתרים שה-AI מצטט",
+   "detail": "ה-AI בונה תשובות מכמה אתרים קבועים.",
+   "how_to_fix": "לפנות לאתרים האלה ולבקש להיכלל בהם.",
+   "evidence": [
+    "reviews.test (3 תשובות)",
+    "blog.test (1 תשובות)",
+    "compare.test (1 תשובות)"
+   ],
+   "impact": 3,
+   "effort": 4,
+   "owner": "השיווק",
+   "tech": "מקורות מצוטטים בתשובות AI",
+   "affected": 0,
+   "of": 0
+  },
+  {
+   "analyzer": "technical-seo",
+   "key": "check-thin-pages",
+   "title": "לבדוק דפים דלים בטקסט",
+   "detail": "ב-2 דפים יש פחות מ-100 מילים.",
+   "how_to_fix": "להוסיף טקסט שמסביר את השירות, אם הדף חשוב.",
+   "evidence": [
+    "https://www.acme-demo.co.il/about (3 מילים)",
+    "https://www.acme-demo.co.il/slow (1 מילים)"
+   ],
+   "impact": 2,
+   "effort": 2,
+   "owner": "כותב התוכן",
+   "tech": "דפים עם מעט תוכן (לא נכלל בציון)",
+   "affected": 0,
+   "of": 0
+  },
+  {
+   "analyzer": "technical-seo",
+   "key": "image-alt",
+   "title": "להוסיף תיאור לתמונות",
+   "detail": "יש תמונות שמנועי חיפוש לא מבינים.",
+   "how_to_fix": "לכתוב לכל תמונה תיאור של כמה מילים.",
+   "evidence": [
+    "https://www.acme-demo.co.il/about (1 תמונות)"
+   ],
+   "impact": 2,
+   "effort": 2,
+   "owner": "כותב התוכן",
+   "tech": "תכונת alt חסרה בתמונות",
+   "affected": 1,
+   "of": 3
+  }
+ ]
+}

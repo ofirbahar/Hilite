@@ -127,6 +127,7 @@ def main(out_dir: str) -> None:
             + SCRIPT + "</body>\n</html>\n")
     page = page.replace('href="/check"', 'href="#check"').replace('href="/"', 'href="#home"')
     page = page.replace('href="/privacy"', 'href="#home"')
+    page = page.replace('href="/sample"', 'href="#report"')
     page = page.replace('<link rel="stylesheet" href="/static/fonts/fonts.css">', FONTS)
     page = re.sub(r'<link rel="preload"[^>]*>\n?', "", page)      # the demo has no /static folder
     (out / "site-demo.html").write_text(page, encoding="utf-8")

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import json
 import logging
 import os
 import re
@@ -14,6 +15,7 @@ import threading
 import time
 from collections import deque
 from datetime import date, datetime, timezone
+from pathlib import Path
 from urllib.parse import urlparse
 
 from flask import (Flask, abort, g, redirect, render_template, request, send_from_directory,
@@ -23,6 +25,7 @@ from werkzeug.exceptions import HTTPException
 
 from .config import (ClientConfig, ConfigError, exists, is_public_address, platform_of,
                      split_site_address)
+from .models import Fact, Finding
 from .pipeline import RunResult, default_collectors
 from .pipeline import run as run_pipeline
 from .report import render_report
@@ -325,6 +328,14 @@ def create_app(db_path: str = "bvm.sqlite3", allow_private: bool = False,
     @app.get("/privacy")
     def privacy():
         return render_template("privacy.html", contact=contact, canonical=absolute("/privacy"))
+
+    @app.get("/sample")
+    def sample():
+        """A whole report to read before checking a site of one's own (tools/make_sample.py)."""
+        data = json.loads((Path(__file__).parent / "sample.json").read_text(encoding="utf-8"))
+        result = RunResult(0, [Fact(**f) for f in data["facts"]], [Finding(**f) for f in data["findings"]])
+        return render_report(ClientConfig(**data["config"]), result, back_url=url_for("check"),
+                             home_url=url_for("home"), nonce=nonce(), sample=True)
 
     @app.get("/check")
     def check():

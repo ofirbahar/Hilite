@@ -93,7 +93,7 @@ def changes(previous: dict | None, value: int | None, findings: list[Finding],
 def render_report(cfg: ClientConfig, result: RunResult, today: date | None = None,
                   back_url: str = "", home_url: str = "", previous: dict | None = None,
                   again_url: str = "", delete_url: str = "", share_url: str = "",
-                  remember: dict | None = None, nonce: str = "") -> str:
+                  remember: dict | None = None, nonce: str = "", sample: bool = False) -> str:
     """previous: the last check of the same business, for the "what changed" lines:
     {"date", "score", "findings", "parts"}.
     again_url, delete_url: where the report's two buttons post to; empty hides the button.
@@ -113,6 +113,7 @@ def render_report(cfg: ClientConfig, result: RunResult, today: date | None = Non
                              f"{', '.join(names)} לא ענה על חלק מהשאלות."))
     return _env.get_template("report.html").render(
         client=cfg,
+        sample=sample,
         today=(today or date.today()).strftime("%d.%m.%Y"),
         score=value,
         status=status,
