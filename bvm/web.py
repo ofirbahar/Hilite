@@ -58,8 +58,6 @@ NO_DEVICE_ACCESS = "camera=(), microphone=(), geolocation=(), payment=(), usb=()
 # Questions people ask before they try it. Every answer repeats what the site already
 # says elsewhere. Shown on the home page and handed to search engines in the same words.
 FAQ = [
-    ("צריך להירשם?",
-     "לא. אין הרשמה, ולא מבקשים אימייל, טלפון או סיסמה. מזינים כתובת ומקבלים דוח."),
     ("מי יכול לראות את הדוח?",
      "רק מי שיש לו אחד משני הקישורים של הדוח: הקישור האישי, או קישור לקריאה בלבד שאפשר "
      "להעביר הלאה. מהקישור האישי אפשר גם למחוק את הבדיקה."),

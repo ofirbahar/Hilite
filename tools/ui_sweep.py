@@ -21,7 +21,7 @@ CHECK = r"""
   while (walker.nextNode()) {
     const node = walker.currentNode; const el = node.parentElement;
     if (!node.textContent.trim() || !el || seen.has(el)) continue; seen.add(el);
-    if (el.closest('script,style,noscript,[hidden]')) continue;
+    if (el.closest('script,style,noscript,[hidden],.sr')) continue;
     const s = getComputedStyle(el); const box = el.getBoundingClientRect();
     if (s.visibility === 'hidden' || s.display === 'none' || box.width === 0 || box.height === 0) continue;
     if (el.closest('details:not([open]) > :not(summary)')) continue;
