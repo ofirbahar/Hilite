@@ -137,5 +137,5 @@ def test_text_colours_are_readable():
     border = re.search(r"input, textarea \{[^}]*border: 1px solid (#[0-9a-f]{6})", css).group(1)
     assert contrast(border, token("paper")) >= 3                     # a field's edge must be visible
     landing = (TEMPLATES / "_landing_style.html").read_text(encoding="utf-8")
-    unlit = float(re.search(r"\.say-text \.w \{ opacity: ([\d.]+)", landing).group(1))
-    assert unlit >= 0.5                                             # readable before it lights up
+    dimmed = re.search(r"\.say-text \.w \{ opacity: ([\d.]+)", landing)
+    assert dimmed is None or float(dimmed.group(1)) >= 0.5          # no text waits, dimmed, to be read

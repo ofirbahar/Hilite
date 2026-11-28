@@ -27,11 +27,11 @@
         <div class="field-row">
           <input id="hero-site" name="site" type="text" dir="ltr" required inputmode="url" autocapitalize="off"
                  autocomplete="url" spellcheck="false" maxlength="2000" placeholder="www.example.co.il">
-          <button class="btn" type="submit" data-once data-pull>בדוק את העסק</button>
+          <button class="btn" type="submit" data-once>בדוק את העסק</button>
         </div>
       </form>
       <p class="facts rise" style="--d: 3">עד 30 דפים. 18 בדיקות באתר. בלחיצה נסרוק את הכתובת ונשמור את התוצאה. <a href="{{ url_for('privacy') }}">מה אנחנו שומרים</a></p>
-      <figure class="stage rise" style="--d: 5" aria-label="דוגמה: תשובה של עוזר AI והציון בדוח">
+      <figure class="stage rise" style="--d: 4" aria-label="דוגמה: תשובה של עוזר AI והציון בדוח">
         <div class="stage-ai">
           <div class="stage-top"><b>שאלה לעוזר AI</b><span>דוגמה</span></div>
           <p class="ask">מה המסעדה הכי טובה באזור?</p>
@@ -53,7 +53,7 @@
 
   <section class="say" aria-label="למה זה חשוב">
     <div class="wrap">
-      <p class="say-text" id="say">פעם חיפשו בגוגל וקיבלו עשרה קישורים. היום יותר ויותר אנשים שואלים AI ומקבלים תשובה אחת. <em>מי שלא מוזכר בה, לא נמצא שם.</em></p>
+      <p class="say-text">פעם חיפשו בגוגל וקיבלו עשרה קישורים. היום יותר ויותר אנשים שואלים AI ומקבלים תשובה אחת. <em>מי שלא מוזכר בה, לא נמצא שם.</em></p>
     </div>
   </section>
 
@@ -190,10 +190,10 @@
   <section class="close">
     <div class="wrap">
       <h2>כמה קל למצוא אותך?</h2>
-      <a class="btn" href="{{ url_for('check') }}" data-pull>בדוק את העסק</a>
+      <a class="btn" href="{{ url_for('check') }}">בדוק את העסק</a>
     </div>
   </section>
 </main>
-<footer class="foot"><div class="wrap"><span class="foot-logo" dir="ltr">{% with plain=True %}{% include "_logo.html" %}{% endwith %}</span><nav aria-label="קישורי סיום"><a href="{{ url_for('privacy') }}">מה אנחנו שומרים</a><a href="{{ url_for('check') }}">בדיקה חדשה</a></nav></div></footer>
+<footer class="foot"><div class="wrap"><span class="foot-logo" dir="ltr">{% with plain=True %}{% include "_logo.html" %}{% endwith %}</span><nav aria-label="קישורי סיום"><a href="{{ url_for('privacy') }}">מה אנחנו שומרים</a></nav></div></footer>
 {% include "_landing_script.html" %}
 {% endblock %}

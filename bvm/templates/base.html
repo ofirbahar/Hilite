@@ -11,7 +11,7 @@
 </head>
 <body>
 <a class="skip" href="#main">דלג לתוכן</a>
-{% with home_url=url_for('home'), check_url=url_for('check'), check_label='בדוק את העסק' %}{% include "_bar.html" %}{% endwith %}
+{% block bar %}{% with home_url=url_for('home'), check_url=url_for('check'), check_label='בדוק את העסק' %}{% include "_bar.html" %}{% endwith %}{% endblock %}
 {% block body %}{% endblock %}
 {% include "_once.html" %}
 </body>

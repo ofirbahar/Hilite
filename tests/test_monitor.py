@@ -147,7 +147,7 @@ def test_report_shows_one_score_and_three_tasks_first(cfg, tmp_path):
     assert "מתוך 100" in html and "אפשר לשפר" in html
     assert "מה לתקן קודם" in html and "עוד משימות" in html
     assert "<b>Acme</b>" not in html and "&lt;b&gt;Acme&lt;/b&gt;" in html
-    first_screen = html.split("<h2>פרטים</h2>")[0]
+    first_screen = html.split("<h2>עוד בדוח</h2>")[0]
     assert first_screen.count('<span class="n">') == 3      # exactly three numbered tasks
     assert result.findings[0].title in first_screen and result.findings[3].title not in first_screen
     for jargon in ("noindex", "robots.txt", "schema"):       # jargon only under "technical details"

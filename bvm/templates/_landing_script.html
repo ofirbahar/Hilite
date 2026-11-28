@@ -1,68 +1,14 @@
 <script{% if nonce %} nonce="{{ nonce }}"{% endif %}>
 (function () {
   'use strict';
-  var still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  {# The entrance starts only once the browser is really drawing frames. If it is not (a
-     background tab, a viewer that holds animations), everything simply shows in its
-     finished state after a moment, so the first screen is never left empty. #}
+  {# The first screen fades in once, quickly, and only when the browser is really drawing
+     frames. If it is not (a background tab, a viewer that holds animations), or the visitor
+     asked for less motion, everything simply shows in its finished state. #}
   var root = document.documentElement, begun = false;
-  if (still) { begun = true; root.classList.add('shown'); }
-  else {
-    requestAnimationFrame(function () { requestAnimationFrame(function () {
-      if (!begun) { begun = true; root.classList.add('go'); }
-    }); });
-    setTimeout(function () { if (!begun) { begun = true; root.classList.add('shown'); } }, 1200);
-  }
-
-  {# The statement: words light up as the reader scrolls through them. #}
-  var say = document.getElementById('say');
-  if (say) {
-    var words = [];
-    (function wrap(node) {
-      Array.prototype.slice.call(node.childNodes).forEach(function (child) {
-        if (child.nodeType === 3) {
-          var frag = document.createDocumentFragment();
-          child.textContent.split(/(\s+)/).forEach(function (part) {
-            if (!part.trim()) { frag.appendChild(document.createTextNode(part)); return; }
-            var span = document.createElement('span');
-            span.className = 'w';
-            span.textContent = part;
-            words.push(span);
-            frag.appendChild(span);
-          });
-          node.replaceChild(frag, child);
-        } else if (child.nodeType === 1) { wrap(child); }
-      });
-    })(say);
-    var queued = false;
-    function read() {
-      queued = false;
-      var box = say.getBoundingClientRect();
-      var vh = window.innerHeight;
-      var p = (vh * 0.82 - box.top) / (box.height + vh * 0.32);
-      var lit = still ? words.length : Math.round(Math.max(0, Math.min(1, p)) * words.length);
-      words.forEach(function (w, i) { w.classList.toggle('on', i < lit); });
-    }
-    read();
-    if (!still) {
-      window.addEventListener('scroll', function () { if (!queued) { queued = true; requestAnimationFrame(read); } }, { passive: true });
-      window.addEventListener('resize', read);
-    }
-  }
-
-  {# The two main buttons lean a few pixels toward a mouse that comes near. #}
-  if (!still && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
-    Array.prototype.forEach.call(document.querySelectorAll('[data-pull]'), function (button) {
-      button.addEventListener('pointermove', function (e) {
-        var box = button.getBoundingClientRect();
-        button.style.setProperty('--pull-x', ((e.clientX - box.left - box.width / 2) * 0.16).toFixed(1) + 'px');
-        button.style.setProperty('--pull-y', ((e.clientY - box.top - box.height / 2) * 0.28).toFixed(1) + 'px');
-      });
-      button.addEventListener('pointerleave', function () {
-        button.style.removeProperty('--pull-x'); button.style.removeProperty('--pull-y');
-      });
-    });
-  }
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { root.classList.add('shown'); return; }
+  requestAnimationFrame(function () { requestAnimationFrame(function () {
+    if (!begun) { begun = true; root.classList.add('go'); }
+  }); });
+  setTimeout(function () { if (!begun) { begun = true; root.classList.add('shown'); } }, 800);
 })();
 </script>

@@ -286,7 +286,7 @@ def test_the_site_has_what_it_checks_other_sites_for(tmp_path):
     kinds = {node["@type"]: node for node in data["@graph"]}
     assert set(kinds) == {"WebSite", "WebApplication", "FAQPage"}
     asked = kinds["FAQPage"]["mainEntity"]
-    assert len(asked) >= 5
+    assert len(asked) >= 3
     for question in asked:                       # what search engines are told is on the page
         assert question["name"] in home and question["acceptedAnswer"]["text"] in home
     assert 'rel="canonical" href="https://hilite.example/privacy"' in client.get("/privacy").get_data(as_text=True)

@@ -9,9 +9,9 @@
 .small { font-size: 15px; color: var(--muted); }
 
 {# first screen #}
-.hero { padding: clamp(52px, 7.5vw, 112px) 0 clamp(64px, 8vw, 120px); text-align: center; }
+.hero { padding: clamp(40px, 5.5vw, 80px) 0 clamp(56px, 7vw, 96px); text-align: center; }
 .hero .wrap { display: flex; flex-direction: column; align-items: center; }
-.hero h1 { font-size: clamp(40px, 6.8vw, 96px); line-height: 1.02; font-weight: 600; letter-spacing: -0.045em; max-width: 12em; text-wrap: balance; }
+.hero h1 { font-size: clamp(38px, 6vw, 80px); line-height: 1.02; font-weight: 600; letter-spacing: -0.045em; max-width: 12em; text-wrap: balance; }
 .lead { font-size: clamp(18px, 1.7vw, 22px); line-height: 1.55; color: var(--muted); max-width: 32em; margin-top: clamp(18px, 2vw, 28px); }
 .hero-form { width: 100%; max-width: 580px; gap: 10px; margin-top: clamp(28px, 3vw, 40px); }
 .hero-form label { color: var(--muted); font-weight: 500; }
@@ -26,7 +26,7 @@
 .facts a { color: var(--ink); text-decoration: underline; white-space: nowrap; }
 
 {# the exhibit: one AI answer beside the score it leads to #}
-.stage { width: 100%; max-width: 1040px; margin-top: clamp(48px, 7vw, 96px); text-align: start;
+.stage { width: 100%; max-width: 1040px; margin-top: clamp(40px, 5vw, 64px); text-align: start;
   display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
   background: var(--card); border: 1px solid var(--line); border-radius: 28px; box-shadow: var(--shadow); }
 .stage > div { padding: clamp(22px, 3vw, 40px); display: flex; flex-direction: column; gap: 16px; }
@@ -47,24 +47,17 @@
 {# One entrance, on the first screen only. Hidden only when a script is there to show it. #}
 .js .rise { opacity: 0; }
 .js.shown .rise { opacity: 1; }
-.js.go .rise { opacity: 1; animation: rise 800ms var(--ease-out) both; animation-delay: calc(var(--d) * 80ms + 60ms); }
-.js.go .answer mark { animation: strike 520ms var(--ease-out) both; }
-.js.go .answer mark:nth-of-type(1) { animation-delay: 1000ms; }
-.js.go .answer mark:nth-of-type(2) { animation-delay: 1240ms; }
-.js.go .answer mark:nth-of-type(3) { animation-delay: 1480ms; }
-@keyframes rise { from { opacity: 0; transform: translateY(16px); } }
-@keyframes strike { from { background-size: 0% 84%; } }
+.js.go .rise { opacity: 1; animation: rise 500ms var(--ease-out) both; animation-delay: calc(var(--d) * 50ms); }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } }
 
-{# the statement, read as you scroll #}
-.say { padding: clamp(72px, 11vw, 168px) 0; }
+{# the statement #}
+.say { padding: clamp(56px, 8vw, 112px) 0; }
 .say-text { font-family: var(--display); font-weight: 600; font-size: clamp(28px, 4.6vw, 68px); line-height: 1.14; letter-spacing: -0.04em; max-width: 17em; text-wrap: balance; }
 .say-text em { font-style: normal; }
-.say-text .w { opacity: 0.5; transition: opacity 260ms ease, color 260ms ease; }
-.say-text .w.on { opacity: 1; }
-.say-text em .w.on { color: var(--accent); }
+.say-text em { color: var(--accent); }
 
 {# sections: white rooms and pale grey rooms #}
-.part { padding: clamp(72px, 10vw, 144px) 0; }
+.part { padding: clamp(56px, 7.5vw, 104px) 0; }
 .part.band { background: var(--fill); }
 .aside { display: grid; grid-template-columns: minmax(0, 0.55fr) minmax(0, 1fr); gap: clamp(32px, 7vw, 120px); align-items: start; }
 .aside > h2 { position: sticky; top: 104px; }
@@ -106,9 +99,9 @@
 .faq .inside { font-size: 17px; max-width: 44em; }
 
 {# the page ends on black #}
-.close { background: var(--night); color: var(--night-ink); padding: clamp(88px, 12vw, 176px) 0; text-align: center; }
+.close { background: var(--night); color: var(--night-ink); padding: clamp(72px, 9vw, 128px) 0; text-align: center; }
 .close .wrap { display: flex; flex-direction: column; align-items: center; gap: clamp(28px, 4vw, 44px); }
-.close h2 { font-size: clamp(40px, 7vw, 104px); line-height: 1; letter-spacing: -0.045em; }
+.close h2 { font-size: clamp(36px, 5.4vw, 72px); line-height: 1; letter-spacing: -0.045em; }
 .close .btn { min-height: 58px; padding: 0 34px; font-size: 18px; background: var(--night-ink); color: var(--night); }
 @media (hover: hover) and (pointer: fine) { .close .btn:hover { background: #e4e6eb; } }
 .foot { background: var(--night); color: var(--night-muted); border-top: 1px solid #23252b; font-size: 14px; padding: 28px 0; }
@@ -142,8 +135,7 @@
   .close .btn { width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .rise, .answer mark { animation: none !important; }
-  .say-text .w { transition: none; }
+  .rise { animation: none !important; }
   .js .rise { opacity: 1; }
 }
 </style>

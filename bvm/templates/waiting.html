@@ -3,6 +3,7 @@
 {% set who = run.config.get('name') %}
 {% set address = (run.config.get('site', '')|replace('https://', '')|replace('http://', '')) ~ (run.config.get('start_path', '/') if run.config.get('start_path', '/') != '/' else '') %}
 {% block title %}בודקים את {{ who or address }}{% endblock %}
+{% block bar %}{% with home_url=url_for('home'), check_url=None %}{% include "_bar.html" %}{% endwith %}{% endblock %}
 {% block body %}
 {% set asks_ai = run.config.get('buyer_questions') %}
 <main class="page waiting" id="main" data-waiting>

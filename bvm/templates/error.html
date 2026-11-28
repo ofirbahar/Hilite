@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ title }} | Hilite{% endblock %}
+{% block bar %}{% with home_url=url_for('home'), check_url=None %}{% include "_bar.html" %}{% endwith %}{% endblock %}
 {% block body %}
 <main class="page" id="main">
   <div class="hello">

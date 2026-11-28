@@ -21,8 +21,6 @@
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --shadow: 0 1px 2px rgba(11, 12, 15, 0.05), 0 12px 24px -12px rgba(11, 12, 15, 0.1), 0 40px 80px -40px rgba(11, 12, 15, 0.22);
 }
-{# going from page to page is a soft cross-fade where the browser can do it #}
-@view-transition { navigation: auto; }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html { -webkit-text-size-adjust: 100%; scrollbar-color: #c5c8cf var(--paper); }
@@ -168,8 +166,7 @@ input:-webkit-autofill, textarea:-webkit-autofill { -webkit-text-fill-color: var
   box-shadow: 0 0 0 1000px var(--card) inset; transition: background-color 9999s; }
 .btn { font: inherit; font-weight: 600; color: var(--paper); background: var(--ink); border: 0; border-radius: 12px;
   min-height: 54px; padding: 0 28px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-  translate: var(--pull-x, 0) var(--pull-y, 0);
-  transition: background-color 160ms ease, transform 120ms var(--ease-out), translate 320ms var(--ease-out); }
+  transition: background-color 160ms ease, transform 120ms var(--ease-out); }
 .btn:active { transform: scale(0.97); }
 @media (hover: hover) and (pointer: fine) {
   .btn:hover { background: #2a2c33; }
@@ -217,7 +214,6 @@ input:-webkit-autofill, textarea:-webkit-autofill { -webkit-text-fill-color: var
   .doing li:first-child { opacity: 1; }
   .btn, summary .ico, .bar .go { transition: none; }
   details::details-content { transition: none; }
-  @view-transition { navigation: none; }
   .btn:active, .bar .go:active { transform: none; }
 }
 @media (max-width: 520px) {
