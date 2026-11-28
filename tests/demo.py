@@ -34,7 +34,7 @@ ANSWERS = {
 
 
 # The demo is one file with no server behind it, so its fonts cannot come from /static.
-FONTS = ('<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@100..900&display=swap" '
+FONTS = ('<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Hebrew:wght@300;400;500;600;700&display=swap" '
          'rel="stylesheet">')
 
 SCRIPT = """
@@ -116,7 +116,7 @@ def main(out_dir: str) -> None:
     waiting_body = waiting_body.replace("בודקים את Acme", 'בודקים את <span data-biz>Acme</span>')
     # Nothing is scanned here, and every visitor gets the same sample report. Say so where
     # it cannot be missed, so the fixed score is never taken for a real result.
-    note = ('<p role="note" style="margin:0;padding:12px 20px;background:var(--mark);color:var(--ink);'
+    note = ('<p role="note" style="margin:0;padding:12px 20px;background:var(--mark);color:var(--on-mark);'
             'font-weight:600;text-align:center">זו הדגמה בלבד. שום אתר לא נסרק כאן, והציון והמשימות '
             'קבועים לכל עסק.</p>')
     page = (head + "</head>\n<body>\n" + bar

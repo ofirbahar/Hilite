@@ -21,26 +21,33 @@
   <section class="hero">
     <div class="wrap">
       <h1 class="rise" style="--d: 0">גוגל ו-AI ממליצים על העסק שלך?</h1>
-      <div class="hero-grid">
-        <div class="hero-copy">
-          <p class="lead rise" style="--d: 2">בדיקה קצרה מראה איך האתר שלך נראה לגוגל, ומה עוזרי ה-AI עונים כששואלים על התחום שלך.</p>
-          <form class="hero-form rise" style="--d: 3" method="post" action="{{ url_for('scan') }}">
-            <label for="hero-site">כתובת האתר או דף העסק</label>
-            <div class="field-row">
-              <input id="hero-site" name="site" type="text" dir="ltr" required inputmode="url" autocapitalize="off"
-                     autocomplete="url" spellcheck="false" maxlength="2000" placeholder="www.example.co.il">
-              <button class="btn" type="submit" data-once data-pull>בדוק את העסק</button>
-            </div>
-          </form>
-          <p class="facts rise" style="--d: 4">עד 30 דפים. 18 בדיקות באתר. בלחיצה נסרוק את הכתובת ונשמור את התוצאה. <a href="{{ url_for('privacy') }}">מה אנחנו שומרים</a></p>
+      <p class="lead rise" style="--d: 1">בדיקה קצרה מראה איך האתר שלך נראה לגוגל, ומה עוזרי ה-AI עונים כששואלים על התחום שלך.</p>
+      <form class="hero-form rise" style="--d: 2" method="post" action="{{ url_for('scan') }}">
+        <label for="hero-site">כתובת האתר או דף העסק</label>
+        <div class="field-row">
+          <input id="hero-site" name="site" type="text" dir="ltr" required inputmode="url" autocapitalize="off"
+                 autocomplete="url" spellcheck="false" maxlength="2000" placeholder="www.example.co.il">
+          <button class="btn" type="submit" data-once data-pull>בדוק את העסק</button>
         </div>
-        <figure class="specimen rise" style="--d: 3" aria-label="דוגמה: שאלה לעוזר AI והתשובה שלו">
-          <figcaption><span>שאלה לעוזר AI</span><span>דוגמה</span></figcaption>
+      </form>
+      <p class="facts rise" style="--d: 3">עד 30 דפים. 18 בדיקות באתר. בלחיצה נסרוק את הכתובת ונשמור את התוצאה. <a href="{{ url_for('privacy') }}">מה אנחנו שומרים</a></p>
+      <figure class="stage rise" style="--d: 5" aria-label="דוגמה: תשובה של עוזר AI והציון בדוח">
+        <div class="stage-ai">
+          <div class="stage-top"><b>שאלה לעוזר AI</b><span>דוגמה</span></div>
           <p class="ask">מה המסעדה הכי טובה באזור?</p>
           <p class="answer">ממליצים בעיקר על <mark>מתחרה א׳</mark> ועל <mark>מתחרה ב׳</mark>. גם <mark>מתחרה ג׳</mark> מקבל ביקורות טובות.</p>
           <p class="miss"><svg class="ico" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 3l8 8M11 3l-8 8"/></svg>העסק שלך לא הוזכר</p>
-        </figure>
-      </div>
+        </div>
+        <div class="stage-score warn">
+          <div class="stage-top"><b>הציון בדוח</b><span>דוגמה</span></div>
+          <div class="ring" role="img" aria-label="ציון לדוגמה: 62 מתוך 100">
+            <svg viewBox="0 0 120 120" aria-hidden="true"><circle class="track" cx="60" cy="60" r="54"/><circle class="value" cx="60" cy="60" r="54" pathLength="100" style="stroke-dasharray: 62 100"/></svg>
+            <div class="num"><b>62</b><small>מתוך 100</small></div>
+          </div>
+          <span class="verdict">אפשר לשפר</span>
+          <p>הדוח מראה מה לתקן קודם כדי שהציון יעלה.</p>
+        </div>
+      </figure>
     </div>
   </section>
 
@@ -50,7 +57,7 @@
     </div>
   </section>
 
-  <section class="part">
+  <section class="part band">
     <div class="wrap split">
       <div class="copy">
         <h2>מי מופיע בתשובה במקומך</h2>
@@ -81,13 +88,6 @@
       </div>
       <figure class="sheet" aria-label="דוגמה למשימות בדוח">
         <div class="sheet-top"><b>מה לתקן קודם</b><span>דוגמה</span></div>
-        <div class="sheet-score warn">
-          <div class="ring" role="img" aria-label="ציון לדוגמה: 62 מתוך 100">
-            <svg viewBox="0 0 120 120" aria-hidden="true"><circle class="track" cx="60" cy="60" r="54"/><circle class="value" cx="60" cy="60" r="54" pathLength="100" style="stroke-dasharray: 62 100"/></svg>
-            <div class="num"><b>62</b><small>מתוך 100</small></div>
-          </div>
-          <div><span class="verdict">אפשר לשפר</span><p>שלוש המשימות שיעלו את הציון הכי הרבה:</p></div>
-        </div>
         <div class="rows">
           {% set chevron = '<svg class="ico" viewBox="0 0 14 14" aria-hidden="true"><path d="M9 2.5L4.5 7 9 11.5"/></svg>' %}
           <details open>
@@ -107,7 +107,7 @@
     </div>
   </section>
 
-  <section class="part">
+  <section class="part band">
     <div class="wrap">
       <h2>מה נבדק</h2>
       <div class="ledger">
@@ -158,7 +158,7 @@
     </div>
   </section>
 
-  <section class="part">
+  <section class="part band">
     <div class="wrap split">
       <div class="copy">
         <h2>לא נוגעים באתר שלך</h2>
