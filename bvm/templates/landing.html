@@ -69,37 +69,17 @@
           <input id="compare" type="range" min="0" max="100" value="50"></div>
         <figcaption class="small">דוגמה. הדוח מראה מה באתר מפריע ל-AI להזכיר אותך. הוא לא מבטיח שהתשובה תשתנה.</figcaption>
       </figure>
+      <p class="after-h">כותבים את השאלות שהלקוחות שלך שואלים ואת שמות המתחרים. אנחנו שואלים עוזרי AI כמו Claude, ChatGPT ו-Perplexity, ומראים מי הוזכר בכל תשובה.</p>
+      <p class="small">בדיקת ה-AI פועלת רק כשהיא מחוברת במערכת.</p>
     </div>
   </section>
 
   <section class="part band">
-    <div class="wrap split">
-      <div class="copy">
-        <h2>מי מופיע בתשובה במקומך</h2>
-        <p>כותבים את השאלות שהלקוחות שלך שואלים ואת שמות המתחרים. אנחנו שואלים עוזרי AI כמו Claude, ChatGPT ו-Perplexity, ומראים מי הוזכר בכל תשובה.</p>
-        <p class="small">עד 10 שאלות ו-5 מתחרים בכל בדיקה. בדיקת ה-AI פועלת רק כשהיא מחוברת במערכת.</p>
-      </div>
-      <figure class="sheet" aria-label="דוגמה לחלק ה-AI בדוח">
-        <div class="sheet-top"><b>מה ה-AI עונה</b><span>דוגמה</span></div>
-        <ul class="bars">
-          <li class="you"><span>העסק שלך</span><b>1 מתוך 4</b><div class="line"><i style="--w: 25%"></i></div></li>
-          <li><span>מתחרה א׳</span><b>3 מתוך 4</b><div class="line"><i style="--w: 75%"></i></div></li>
-          <li><span>מתחרה ב׳</span><b>3 מתוך 4</b><div class="line"><i style="--w: 75%"></i></div></li>
-        </ul>
-        <ul class="asked">
-          <li><q>מה המסעדה הכי טובה באזור?</q><span class="ans"><span class="no">לא הוזכרת</span>. הוזכרו: מתחרה א׳, מתחרה ב׳</span></li>
-          <li><q>איפה כדאי לאכול ארוחת בוקר?</q><span class="ans"><span class="yes">הוזכרת</span>. הוזכרו: מתחרה א׳</span></li>
-        </ul>
-      </figure>
-    </div>
-  </section>
-
-  <section class="part">
     <div class="wrap split flip">
       <div class="copy">
         <h2>ציון אחד. שלוש משימות.</h2>
         <p>הדוח נפתח בשלושת הדברים שהכי כדאי לתקן. כל משימה כתובה בעברית פשוטה: מה הבעיה, איך מתקנים, מי מתקן ועל מה זה משפיע, גוגל או תשובות ה-AI.</p>
-        <p class="small">לחיצה על משימה פותחת אותה, כמו בדוח עצמו. <a href="{{ url_for('sample') }}">לדוח שלם לדוגמה</a></p>
+        <p class="small"><a href="{{ url_for('sample') }}">לדוח שלם לדוגמה</a></p>
       </div>
       <figure class="sheet" aria-label="דוגמה למשימות בדוח">
         <div class="sheet-top"><b>מה לתקן קודם</b><span>דוגמה</span></div>
@@ -122,10 +102,13 @@
     </div>
   </section>
 
-  <section class="part band">
+  <section class="part">
     <div class="wrap">
       <h2>מה נבדק</h2>
       <p class="after-h">כל בדיקה היא סיבה אפשרית לכך שגוגל או עוזר AI לא קוראים את האתר, לא מבינים אותו או לא ממליצים עליו. בדוח מופיע רק מה שדורש תיקון.</p>
+      <div class="rows all-checks">
+        <details>
+          <summary><span class="t">לראות את כל 22 הבדיקות</span>{{ chevron|safe }}</summary>
       <div class="ledger">
         <div>
           <h3>18 בדיקות באתר</h3>
@@ -160,21 +143,23 @@
           </ul>
         </div>
       </div>
+        </details>
+      </div>
     </div>
   </section>
 
-  <section class="part" id="how">
+  <section class="part band" id="how">
     <div class="wrap aside">
       <h2>איך זה עובד</h2>
       <ol class="steps">
-        <li><b>מזינים כתובת</b><p>כתובת האתר, וזה הכול. אין אתר? גם דף פייסבוק, אינסטגרם, Wolt או גוגל מפות מתאים.</p></li>
-        <li><b>אנחנו בודקים</b><p>קוראים עד 30 דפים באתר, ושואלים את ה-AI אם הוא מחובר. בדרך כלל זה לוקח דקה עד שתיים.</p></li>
-        <li><b>מקבלים דוח</b><p>ציון מ-0 עד 100 ורשימת משימות, מהחשובה ביותר. אחרי שמתקנים, בודקים שוב ורואים מה השתנה.</p></li>
+        <li><b>מזינים כתובת של אתר או של דף עסק</b></li>
+        <li><b>אנחנו קוראים עד 30 דפים, בדרך כלל בדקה עד שתיים</b></li>
+        <li><b>מקבלים ציון ורשימת משימות, מתקנים ובודקים שוב</b></li>
       </ol>
     </div>
   </section>
 
-  <section class="part band">
+  <section class="part">
     <div class="wrap split">
       <div class="copy">
         <h2>לא נוגעים באתר שלך</h2>
@@ -189,7 +174,7 @@
     </div>
   </section>
 
-  <section class="part" id="faq">
+  <section class="part band" id="faq">
     <div class="wrap aside">
       <h2>שאלות נפוצות</h2>
       <div class="rows faq">

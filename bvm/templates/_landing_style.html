@@ -26,6 +26,8 @@
 .facts a { color: var(--ink); text-decoration: underline; white-space: nowrap; }
 .facts.consent-line { margin-top: 4px; font-size: 13px; }
 .after-h { font-size: clamp(18px, 1.5vw, 21px); color: var(--muted); max-width: 36em; margin-top: 18px; }
+.say .after-h { margin-top: clamp(28px, 3vw, 40px); }
+.say .small { margin-top: 10px; }
 .small a { color: var(--ink); text-decoration: underline; }
 
 {# the exhibit: one AI answer beside the score it leads to #}
@@ -94,7 +96,8 @@
 .sheet .asked { padding-bottom: 10px; }
 .sheet .rows > :last-child { border-bottom: 0; }
 
-.ledger { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: clamp(32px, 7vw, 120px); margin-top: clamp(36px, 4vw, 56px); }
+.all-checks { margin-top: clamp(24px, 3vw, 40px); }
+.ledger { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: clamp(32px, 7vw, 120px); padding: 20px 0 32px; }
 .ledger h3 { padding-bottom: 14px; border-bottom: 1px solid var(--ink); }
 .checks.two { columns: 2; column-gap: 48px; }
 .checks li { break-inside: avoid; display: flex; align-items: baseline; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--rule); }
