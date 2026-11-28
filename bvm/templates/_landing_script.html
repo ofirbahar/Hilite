@@ -13,51 +13,6 @@
     setTimeout(function () { if (!begun) { begun = true; root.classList.add('shown'); } }, 800);
   }
 
-  {# The example on the first screen, for four kinds of business. Every line is written here
-     in advance; nothing is scanned and no assistant is asked. A string in an answer is plain
-     text, and a one-item list is a name the assistant gave. #}
-  var examples = {
-    food: { ask: 'מה המסעדה הכי טובה באזור?', score: 62, status: 'warn', verdict: 'אפשר לשפר',
-            task: 'להסיר חסימה של מנועי AI.',
-            answer: ['ממליצים בעיקר על ', ['מתחרה א׳'], ' ועל ', ['מתחרה ב׳'], '. גם ', ['מתחרה ג׳'], ' מקבל ביקורות טובות.'] },
-    clinic: { ask: 'איזו מרפאת שיניים מומלצת באזור?', score: 48, status: 'bad', verdict: 'דורש טיפול',
-              task: 'להוסיף פרטי עסק שמנועים קוראים.',
-              answer: [['מתחרה א׳'], ' מקבלת את הדירוג הגבוה ביותר. מטופלים מזכירים גם את ', ['מתחרה ב׳'], '.'] },
-    shop: { ask: 'איפה כדאי לקנות מתנות בעבודת יד?', score: 71, status: 'warn', verdict: 'אפשר לשפר',
-            task: 'לקצר את זמן הטעינה בטלפון.',
-            answer: ['מבחר גדול יש אצל ', ['מתחרה א׳'], '. גם ', ['מתחרה ב׳'], ' ו', ['מתחרה ג׳'], ' מציעות משלוח מהיר.'] },
-    law: { ask: 'מי עורך דין מומלץ לדיני עבודה?', score: 55, status: 'warn', verdict: 'אפשר לשפר',
-           task: 'לענות באתר על השאלות שלקוחות שואלים.',
-           answer: ['השמות שחוזרים הם ', ['מתחרה א׳'], ' ו', ['מתחרה ב׳'], ', בעיקר בזכות מאמרים באתר שלהם.'] }
-  };
-  var stage = document.querySelector('.stage');
-  var picks = Array.prototype.slice.call(document.querySelectorAll('[data-demo]'));
-  if (stage && picks.length) {
-    var ask = stage.querySelector('.ask'), answer = stage.querySelector('.answer');
-    var pane = stage.querySelector('.stage-score'), ring = pane.querySelector('.ring');
-    picks.forEach(function (pick) {
-      pick.addEventListener('click', function () {
-        var example = examples[pick.getAttribute('data-demo')];
-        if (!example) return;
-        picks.forEach(function (other) { other.setAttribute('aria-pressed', String(other === pick)); });
-        ask.textContent = example.ask;
-        answer.textContent = '';
-        example.answer.forEach(function (part) {
-          if (typeof part === 'string') { answer.appendChild(document.createTextNode(part)); return; }
-          var name = document.createElement('mark');
-          name.textContent = part[0];
-          answer.appendChild(name);
-        });
-        pane.className = 'stage-score ' + example.status;
-        ring.setAttribute('aria-label', 'ציון לדוגמה: ' + example.score + ' מתוך 100');
-        ring.querySelector('.value').style.strokeDasharray = example.score + ' 100';
-        ring.querySelector('b').textContent = String(example.score);
-        pane.querySelector('.verdict').textContent = example.verdict;
-        pane.querySelector('[data-demo-task]').textContent = example.task;
-      });
-    });
-  }
-
   {# The comparison: the slider uncovers the answer that names the business. #}
   var range = document.getElementById('compare');
   if (range) {

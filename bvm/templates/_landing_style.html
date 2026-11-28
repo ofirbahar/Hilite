@@ -28,15 +28,6 @@
 .after-h { font-size: clamp(18px, 1.5vw, 21px); color: var(--muted); max-width: 36em; margin-top: 18px; }
 .small a { color: var(--ink); text-decoration: underline; }
 
-{# the example can be switched between four kinds of business; the buttons need a script #}
-.pick { display: none; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; margin-top: clamp(36px, 5vw, 56px); }
-.js .pick { display: flex; }
-.pick button { font: inherit; font-size: 15px; font-weight: 500; min-height: 44px; padding: 0 18px; color: var(--ink); background: var(--card);
-  border: 1px solid var(--edge); border-radius: 10px; cursor: pointer; transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease; }
-.pick button[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
-.js .pick + .stage { margin-top: 16px; }
-.stage .ring .value { transition: stroke-dasharray 500ms var(--ease-out), stroke 200ms ease; }
-
 {# the exhibit: one AI answer beside the score it leads to #}
 .stage { width: 100%; max-width: 1040px; margin-top: clamp(40px, 5vw, 64px); text-align: start;
   display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
@@ -164,7 +155,6 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .rise { animation: none !important; }
-  .stage .ring .value, .pick button { transition: none; }
   .js .rise { opacity: 1; }
 }
 </style>
